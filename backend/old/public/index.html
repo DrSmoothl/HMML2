@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMML - Hello MaiMai Launcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            max-width: 600px;
+            text-align: center;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .status {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .api-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .api-link {
+            display: block;
+            padding: 1rem;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #475569;
+            transition: all 0.3s ease;
+        }
+
+        .api-link:hover {
+            transform: translateY(-2px);
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .api-link strong {
+            display: block;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .info {
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .info h3 {
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            text-align: left;
+        }
+
+        .info-item {
+            background: white;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item strong {
+            color: #1e293b;
+        }
+
+        .footer {
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .api-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">HMML</div>
+        <div class="subtitle">Hello MaiMai Launcher Backend Service</div>
+        <div class="status" id="status">🟢 服务运行中</div>
+
+        <div class="api-links">
+            <a href="/api/health" class="api-link" target="_blank">
+                <strong>🏥 健康检查</strong>
+                查看服务健康状态
+            </a>
+            <a href="/api/info" class="api-link" target="_blank">
+                <strong>ℹ️ 服务信息</strong>
+                获取服务详细信息
+            </a>
+        </div>
+
+        <div class="info">
+            <h3>🚀 服务信息</h3>
+            <div class="info-grid" id="serviceInfo">
+                <div class="info-item">
+                    <strong>版本:</strong> <span id="version">加载中...</span>
+                </div>
+                <div class="info-item">
+                    <strong>环境:</strong> <span id="environment">加载中...</span>
+                </div>
+                <div class="info-item">
+                    <strong>运行时间:</strong> <span id="uptime">加载中...</span>
+                </div>
+                <div class="info-item">
+                    <strong>内存使用:</strong> <span id="memory">加载中...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>基于 MCSM 框架设计 | Powered by Node.js & Koa</p>
+        </div>
+    </div>
+
+    <script>
+        // 加载服务信息
+        async function loadServiceInfo() {
+            try {
+                const [healthRes, infoRes] = await Promise.all([
+                    fetch('/api/health'),
+                    fetch('/api/info')
+                ]);
+
+                if (healthRes.ok && infoRes.ok) {
+                    const health = await healthRes.json();
+                    const info = await infoRes.json();
+
+                    if (health.data && info.data) {
+                        document.getElementById('version').textContent = info.data.version || '未知';
+                        document.getElementById('environment').textContent = info.data.environment || '未知';
+                        
+                        const uptimeSeconds = health.data.uptime || 0;
+                        const hours = Math.floor(uptimeSeconds / 3600);
+                        const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+                        document.getElementById('uptime').textContent = `${hours}小时 ${minutes}分钟`;
+                        
+                        if (health.data.memory) {
+                            document.getElementById('memory').textContent = 
+                                `${health.data.memory.used}MB / ${health.data.memory.total}MB`;
+                        }
+                    }
+                } else {
+                    throw new Error('API请求失败');
+                }
+            } catch (error) {
+                console.error('加载服务信息失败:', error);
+                document.getElementById('status').textContent = '🔴 服务异常';
+                document.getElementById('status').style.background = '#ef4444';
+                
+                // 显示错误状态
+                ['version', 'environment', 'uptime', 'memory'].forEach(id => {
+                    document.getElementById(id).textContent = '获取失败';
+                });
+            }
+        }
+
+        // 页面加载完成后获取信息
+        document.addEventListener('DOMContentLoaded', loadServiceInfo);
+
+        // 每30秒刷新一次状态
+        setInterval(loadServiceInfo, 30000);
+    </script>
+</body>
+</html>

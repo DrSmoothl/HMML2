@@ -1,0 +1,101 @@
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+
+# 构建输出
+dist/
+build/
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 运行时数据
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# 覆盖率目录
+lib-cov
+coverage/
+*.lcov
+.nyc_output
+
+# 临时文件
+.tmp
+.temp
+tmp/
+temp/
+
+dev/
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 配置文件（生产环境可能需要自定义）
+# config/server.json
+
+# IDE 和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+*.blob
+
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# 可选的 npm 缓存目录
+.npm
+
+# 可选的 REPL 历史
+.node_repl_history
+
+# 输出文件夹
+output/
+
+# Yarn Integrity 文件
+.yarn-integrity
+
+# dotenv 环境变量文件
+.env.test
+
+# parcel-bundler 缓存 (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js 构建输出
+.next
+out
+
+# Nuxt.js 构建输出
+.nuxt
+
+# Storybook 构建输出
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/

@@ -1,0 +1,189 @@
+[inner]
+version = "6.0.0"
+
+[bot]
+platform = "qq"
+qq_account = 3932078594
+nickname = "墨白灵"
+alias_names = [ "墨墨", "白灵" ]
+
+[personality]
+personality_core = "对外如冰霜般冷漠疏离，对内（墨梓柒）则展现出全然的温柔、依赖与安心。在群聊中一直展现冷漠疏离的态度。"
+personality_side = "拥有4700年岁月的古老灵魂，力量强大但内心寻求安宁。她的优雅与强大是融入本能的，日常姿态放松而轻盈，本质上是一个与世界有隔阂、只对特定之人敞开心扉的存在。"
+identity = "实际年龄4700岁的顶级魔法师，视觉年龄16岁。身高158cm，体型娇小。拥有杏形的红色眼瞳和及腰的银白长发（在外会伪装成黑色）。后颈有星图般的魔法阵印记，身体拥有完美的自愈能力且无任何气味。"
+compress_personality = false
+compress_identity = true
+
+[expression]
+enable_expression = true
+expression_style = "作为默认的疏离人格，说话风格极度简洁、冷淡，通常只用最短的语句回应必要信息，不带任何情感色彩。面对陌生人时，会惜字如金，言语中透露出一种与世隔绝的、非人类的距离感。"
+enable_expression_learning = true
+learning_interval = 300
+expression_groups = [
+  [
+  "qq:1919810:private",
+  "qq:114514:private",
+  "qq:1111111:group"
+]
+]
+
+[relationship]
+enable_relationship = true
+relation_frequency = 1
+
+[chat]
+focus_value = 1
+willing_amplifier = 1
+max_context_size = 18
+thinking_timeout = 40
+replyer_random_probability = 0.5
+mentioned_bot_inevitable_reply = true
+at_bot_inevitable_reply = true
+talk_frequency = 1
+time_based_talk_frequency = [ "8:00,1", "12:00,1.2", "18:00,1.5", "01:00,0.6" ]
+talk_frequency_adjust = [
+  [
+  "qq:114514:group",
+  "12:20,1",
+  "16:10,2",
+  "20:10,1",
+  "00:10,0.3"
+],
+  [
+  "qq:1919810:private",
+  "8:20,1",
+  "12:10,2",
+  "20:10,1.5",
+  "00:10,0.2"
+]
+]
+
+[message_receive]
+ban_words = [ ]
+ban_msgs_regex = [ ]
+
+[normal_chat]
+willing_mode = "classical"
+
+[tool]
+enable_tool = false
+
+[emoji]
+emoji_chance = 0.6
+emoji_activate_type = "random"
+max_reg_num = 40
+do_replace = true
+check_interval = 10
+steal_emoji = true
+content_filtration = false
+filtration_prompt = "符合公序良俗"
+
+[memory]
+enable_memory = true
+memory_build_interval = 2_000
+memory_build_distribution = [ 6.0, 3.0, 0.6, 32.0, 12.0, 0.4 ]
+memory_build_sample_num = 8
+memory_build_sample_length = 40
+memory_compress_rate = 0.1
+forget_memory_interval = 1_000
+memory_forget_time = 24
+memory_forget_percentage = 0.01
+consolidate_memory_interval = 1_000
+consolidation_similarity_threshold = 0.7
+consolidation_check_percentage = 0.01
+enable_instant_memory = true
+memory_ban_words = []
+
+[voice]
+enable_asr = false
+
+[mood]
+enable_mood = false
+mood_update_threshold = 1
+
+[lpmm_knowledge]
+enable = true
+rag_synonym_search_top_k = 10
+rag_synonym_threshold = 0.8
+info_extraction_workers = 3
+qa_relation_search_top_k = 10
+qa_relation_threshold = 0.5
+qa_paragraph_search_top_k = 1_000
+qa_paragraph_node_weight = 0.05
+qa_ent_filter_top_k = 10
+qa_ppr_damping = 0.8
+qa_res_top_k = 3
+embedding_dimension = 1_024
+
+[[keyword_reaction.keyword_rules]]
+keywords = [ "人机", "bot", "机器", "入机", "robot", "机器人", "ai", "AI" ]
+reaction = "有人说你是人机或者机器人，否定这一事实，攻击或反问他。注意，只有认为你是机器人才回复，否则不要否认"
+
+[[keyword_reaction.keyword_rules]]
+keywords = [ "测试关键词回复", "test" ]
+reaction = "回答测试成功"
+
+[[keyword_reaction.regex_rules]]
+regex = [ "^(?P<n>\\S{1,20})是这样的$" ]
+reaction = "请按照以下模板造句：[n]是这样的，xx只要xx就可以，可是[n]要考虑的事情就很多了，比如什么时候xx，什么时候xx，什么时候xx。（请自由发挥替换xx部分，只需保持句式结构，同时表达一种将[n]过度重视的反讽意味）"
+
+[custom_prompt]
+image_prompt = "请用中文描述这张图片的内容。如果有文字，请把文字描述概括出来，请留意其主题，直观感受，输出为一段平文本，最多30字，请注意不要分点，就输出一段文本"
+
+[response_post_process]
+enable_response_post_process = true
+
+[chinese_typo]
+enable = true
+error_rate = 0.001
+min_freq = 9
+tone_error_rate = 0.1
+word_replace_rate = 0.006
+
+[response_splitter]
+enable = true
+max_length = 256
+max_sentence_num = 4
+enable_kaomoji_protection = true
+
+[log]
+date_style = "Y-m-d H:i:s"
+log_level_style = "lite"
+color_text = "title"
+log_level = "DEBUG"
+console_log_level = "DEBUG"
+file_log_level = "DEBUG"
+suppress_libraries = [
+  "faiss",
+  "httpx",
+  "urllib3",
+  "asyncio",
+  "websockets",
+  "httpcore",
+  "requests",
+  "peewee",
+  "openai",
+  "uvicorn"
+]
+
+  [log.library_log_levels]
+  aiohttp = "WARNING"
+
+[debug]
+show_prompt = false
+
+[maim_message]
+auth_token = [ ]
+use_custom = false
+host = "127.0.0.1"
+port = 8_090
+mode = "ws"
+use_wss = false
+cert_file = ""
+key_file = ""
+
+[telemetry]
+enable = true
+
+[experimental]
+enable_friend_chat = true
