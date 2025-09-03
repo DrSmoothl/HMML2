@@ -12,6 +12,7 @@ from core.logger import logger
 from services.main_config_service import MainConfigService
 from services.model_config_service import ModelConfigService
 from services.adapter_config_service import AdapterConfigService
+from services.git_clone_service import get_git_clone_service, EnhancedGitCloneService
 from models.config import (
     ConfigUpdateData,
     ApiProviderData,
@@ -19,6 +20,7 @@ from models.config import (
     ProviderDeleteData,
     ModelDeleteData
 )
+from models.git_proxy import GitProxyConfig, GitProxyMirror
 
 router = APIRouter(prefix='/config', tags=['配置管理'])
 
@@ -275,4 +277,115 @@ async def update_qq_adapter_config(update_data: Dict[str, Any]):
         raise HTTPException(status_code=403, detail=str(error))
     except Exception as error:
         logger.error(f'更新QQ适配器配置失败: {error}')
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+# Git代理配置API
+@router.get('/git-proxy/get')
+async def get_git_proxy_config():
+    """
+    获取Git代理配置
+    """
+    try:
+        git_service = get_git_clone_service()
+        config = git_service.get_config()
+        
+        return create_success_response(
+            data=config.dict(),
+            message='获取Git代理配置成功'
+        )
+        
+    except Exception as error:
+        logger.error(f'获取Git代理配置失败: {error}')
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@router.post('/git-proxy/update')
+async def update_git_proxy_config(config: GitProxyConfig):
+    """
+    更新Git代理配置
+    """
+    try:
+        git_service = get_git_clone_service()
+        git_service.update_config(config)
+        
+        # 保存配置到文件
+        EnhancedGitCloneService.save_config_to_file(config, "config/git_proxy.json")
+        
+        return create_success_response(
+            data=config.dict(),
+            message='更新Git代理配置成功'
+        )
+        
+    except Exception as error:
+        logger.error(f'更新Git代理配置失败: {error}')
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@router.post('/git-proxy/add-mirror')
+async def add_git_proxy_mirror(mirror: GitProxyMirror):
+    """
+    添加Git代理镜像
+    """
+    try:
+        git_service = get_git_clone_service()
+        
+        # 检查镜像名称是否已存在
+        config = git_service.get_config()
+        for existing_mirror in config.mirrors:
+            if existing_mirror.name == mirror.name:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"镜像名称已存在: {mirror.name}"
+                )
+        
+        git_service.add_mirror(mirror)
+        
+        # 保存配置
+        EnhancedGitCloneService.save_config_to_file(
+            git_service.get_config(), 
+            "config/git_proxy.json"
+        )
+        
+        return create_success_response(
+            data=mirror.dict(),
+            message='添加镜像成功'
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.error(f'添加镜像失败: {error}')
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@router.delete('/git-proxy/remove-mirror/{mirror_name}')
+async def remove_git_proxy_mirror(mirror_name: str):
+    """
+    删除Git代理镜像
+    """
+    try:
+        git_service = get_git_clone_service()
+        success = git_service.remove_mirror(mirror_name)
+        
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"镜像不存在: {mirror_name}"
+            )
+        
+        # 保存配置
+        EnhancedGitCloneService.save_config_to_file(
+            git_service.get_config(), 
+            "config/git_proxy.json"
+        )
+        
+        return create_success_response(
+            message=f'删除镜像成功: {mirror_name}'
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.error(f'删除镜像失败: {error}')
         raise HTTPException(status_code=500, detail=str(error))

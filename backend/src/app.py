@@ -74,6 +74,14 @@ class Application:
             except Exception as error:
                 logger.warn(f'数据库管理器初始化失败: {error}')
             
+            # 初始化Git克隆服务
+            try:
+                from services.git_clone_service import initialize_git_clone_service
+                initialize_git_clone_service()
+                logger.info('Git克隆服务初始化完成')
+            except Exception as error:
+                logger.warn(f'Git克隆服务初始化失败: {error}')
+            
             # 初始化HTTP服务器
             self.http_server = HttpServer(config)
             await self.http_server.init()

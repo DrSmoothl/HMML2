@@ -192,6 +192,8 @@
     <PluginDetailsModal 
       v-if="selectedPlugin"
       :plugin="selectedPlugin"
+      :is-compatible="isPluginCompatible(selectedPlugin)"
+      :current-version="currentMaiVersion"
       @close="selectedPlugin = null"
       @install="handleInstall"
     />

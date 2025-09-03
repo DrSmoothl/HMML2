@@ -153,13 +153,13 @@
           </div>
           
           <!-- 兼容性状态 -->
-          <div class="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg">
-            <div class="flex items-center gap-2 text-success">
-              <Icon icon="mdi:check-circle" />
-              <span class="font-medium">兼容当前版本</span>
+          <div class="mt-4 p-3 rounded-lg" :class="[getCompatibilityInfo().bgClass, getCompatibilityInfo().borderClass]" style="border-width: 1px;">
+            <div class="flex items-center gap-2" :class="getCompatibilityInfo().textClass">
+              <Icon :icon="getCompatibilityInfo().icon" />
+              <span class="font-medium">{{ getCompatibilityInfo().title }}</span>
             </div>
             <p class="text-sm text-base-content/70 mt-1">
-              此插件与当前麦麦版本兼容，可以安全安装使用
+              {{ getCompatibilityInfo().description }}
             </p>
           </div>
         </div>
@@ -317,6 +317,8 @@ interface Plugin {
 // Props
 const props = defineProps<{
   plugin: Plugin
+  isCompatible?: boolean
+  currentVersion?: string
 }>()
 
 // Emits
@@ -330,6 +332,51 @@ const getPluginInitial = () => {
   const name = props.plugin?.manifest?.name
   if (!name) return '?'
   return name.charAt(0).toUpperCase()
+}
+
+const getCompatibilityInfo = () => {
+  if (!props.currentVersion || !props.plugin.manifest.host_application) {
+    return {
+      compatible: true,
+      title: '版本信息不完整',
+      description: '无法确定兼容性，请谨慎安装',
+      bgClass: 'bg-warning/10',
+      borderClass: 'border-warning/20',
+      textClass: 'text-warning',
+      icon: 'mdi:alert-circle'
+    }
+  }
+  
+  if (props.isCompatible) {
+    return {
+      compatible: true,
+      title: '兼容当前版本',
+      description: `此插件与当前麦麦版本 ${props.currentVersion} 兼容，可以安全安装使用`,
+      bgClass: 'bg-success/10',
+      borderClass: 'border-success/20',
+      textClass: 'text-success',
+      icon: 'mdi:check-circle'
+    }
+  } else {
+    const minVersion = props.plugin.manifest.host_application.min_version
+    const maxVersion = props.plugin.manifest.host_application.max_version
+    let versionRange = `需要版本 ${minVersion}`
+    if (maxVersion) {
+      versionRange += ` - ${maxVersion}`
+    } else {
+      versionRange += ' 及以上'
+    }
+    
+    return {
+      compatible: false,
+      title: '不兼容当前版本',
+      description: `此插件与当前麦麦版本 ${props.currentVersion} 不兼容。${versionRange}`,
+      bgClass: 'bg-error/10',
+      borderClass: 'border-error/20',
+      textClass: 'text-error',
+      icon: 'mdi:close-circle'
+    }
+  }
 }
 </script>
 
@@ -395,6 +442,14 @@ const getPluginInitial = () => {
   animation: successGlow 2s ease-in-out infinite alternate;
 }
 
+.bg-error\/10 {
+  animation: errorGlow 2s ease-in-out infinite alternate;
+}
+
+.bg-warning\/10 {
+  animation: warningGlow 2s ease-in-out infinite alternate;
+}
+
 .bg-accent\/10 {
   animation: accentGlow 2s ease-in-out infinite alternate;
 }
@@ -405,6 +460,24 @@ const getPluginInitial = () => {
   }
   100% {
     background-color: hsl(var(--su) / 0.15);
+  }
+}
+
+@keyframes errorGlow {
+  0% {
+    background-color: hsl(var(--er) / 0.1);
+  }
+  100% {
+    background-color: hsl(var(--er) / 0.15);
+  }
+}
+
+@keyframes warningGlow {
+  0% {
+    background-color: hsl(var(--wa) / 0.1);
+  }
+  100% {
+    background-color: hsl(var(--wa) / 0.15);
   }
 }
 
