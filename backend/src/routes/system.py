@@ -6,7 +6,9 @@ System 路由
 from fastapi import APIRouter, HTTPException
 import time
 import logging
+import re
 from pathlib import Path
+from core.path_cache_manager import path_cache_manager
 
 logger = logging.getLogger("HMML")
 
@@ -141,4 +143,76 @@ async def get_system_info():
         raise HTTPException(
             status_code=500,
             detail=create_error_response(500, "获取系统信息失败")
+        )
+
+
+@router.get("/getMaiVersion", summary="获取麦麦版本号")
+async def get_mai_version():
+    """
+    获取麦麦版本号
+    从麦麦根目录下的 src/config/config.py 文件中读取版本信息
+    """
+    try:
+        logger.info("获取麦麦版本号")
+        
+        # 从根目录缓存获取麦麦根目录
+        main_root = path_cache_manager.get_main_root()
+        if not main_root:
+            logger.error("未找到麦麦根目录，请先设置路径缓存")
+            raise HTTPException(
+                status_code=404,
+                detail=create_error_response(404, "未找到麦麦根目录，请先设置路径缓存")
+            )
+        
+        # 构造配置文件路径
+        config_file_path = Path(main_root) / "src" / "config" / "config.py"
+        
+        if not config_file_path.exists():
+            logger.error(f"配置文件不存在: {config_file_path}")
+            raise HTTPException(
+                status_code=404,
+                detail=create_error_response(404, "麦麦配置文件不存在")
+            )
+        
+        # 读取配置文件内容
+        with open(config_file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        
+        # 使用正则表达式查找版本号
+        version_match = re.search(r'MMC_VERSION\s*=\s*["\']([^"\']+)["\']', content)
+        
+        if not version_match:
+            logger.error("在配置文件中未找到版本号")
+            raise HTTPException(
+                status_code=404,
+                detail=create_error_response(404, "在配置文件中未找到版本号")
+            )
+        
+        raw_version = version_match.group(1)
+        logger.info(f"找到原始版本号: {raw_version}")
+        
+        # 处理预览版本，移除 snapshot 后缀
+        # 例如: 0.10.1.snapshot.1 -> 0.10.1
+        # 例如: 0.10.2.snapshot.3 -> 0.10.2
+        if '.snapshot.' in raw_version:
+            version = raw_version.split('.snapshot.')[0]
+            logger.info(f"检测到预览版本，处理后版本号: {version}")
+        else:
+            version = raw_version
+            logger.info(f"正式版本号: {version}")
+        
+        response_data = {
+            "version": version
+        }
+        
+        return create_success_response(response_data, "获取成功")
+        
+    except HTTPException:
+        # 重新抛出HTTP异常
+        raise
+    except Exception as error:
+        logger.error(f"获取麦麦版本号失败: {error}")
+        raise HTTPException(
+            status_code=500,
+            detail=create_error_response(500, f"获取麦麦版本号失败: {str(error)}")
         )

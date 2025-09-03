@@ -90,6 +90,19 @@
                 <option value="not-installed">未安装</option>
               </select>
             </div>
+            
+            <!-- 版本兼容性筛选 -->
+            <div class="form-control w-full md:w-auto">
+              <select 
+                class="select select-bordered"
+                v-model="selectedCompatibility"
+                @change="filterPlugins"
+              >
+                <option value="">所有版本</option>
+                <option value="compatible">兼容当前版本</option>
+                <option value="incompatible">不兼容</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -146,6 +159,8 @@
             v-for="plugin in filteredPlugins" 
             :key="plugin.id" 
             :plugin="plugin"
+            :is-compatible="isPluginCompatible(plugin)"
+            :current-version="currentMaiVersion"
             @install="handleInstall"
             @view-details="handleViewDetails"
           />
@@ -157,6 +172,8 @@
             v-for="plugin in filteredPlugins" 
             :key="plugin.id" 
             :plugin="plugin"
+            :is-compatible="isPluginCompatible(plugin)"
+            :current-version="currentMaiVersion"
             @install="handleInstall"
             @view-details="handleViewDetails"
           />
@@ -178,6 +195,42 @@
       @close="selectedPlugin = null"
       @install="handleInstall"
     />
+
+    <!-- 确认安装模态框 -->
+    <div class="modal" :class="{ 'modal-open': showInstallConfirm }">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">确认安装插件</h3>
+        <p class="py-4" v-if="pluginToInstall">
+          确定要安装插件 <span class="font-bold text-primary">"{{ pluginToInstall.manifest.name }}"</span> 吗？
+          <br><br>
+          这将从仓库克隆插件代码到本地。
+        </p>
+        <div class="modal-action">
+          <button class="btn btn-ghost" @click="cancelInstall">取消</button>
+          <button class="btn btn-primary" @click="confirmInstall" :disabled="installing">
+            <span v-if="installing" class="loading loading-spinner loading-sm"></span>
+            {{ installing ? '安装中...' : '确认安装' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 消息提示模态框 -->
+    <div class="modal" :class="{ 'modal-open': showMessage }">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <Icon 
+            :icon="messageType === 'success' ? 'mdi:check-circle' : 'mdi:alert-circle'"
+            :class="messageType === 'success' ? 'text-success' : 'text-error'"
+          />
+          {{ messageType === 'success' ? '操作成功' : '操作失败' }}
+        </h3>
+        <p class="py-4">{{ messageContent }}</p>
+        <div class="modal-action">
+          <button class="btn btn-primary" @click="closeMessage">确定</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -230,9 +283,21 @@ const filteredPlugins = ref<Plugin[]>([])
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedInstallStatus = ref('')
+const selectedCompatibility = ref('')
 const sortBy = ref('name')
 const viewMode = ref<'grid' | 'list'>('grid')
 const selectedPlugin = ref<Plugin | null>(null)
+
+// 版本相关
+const currentMaiVersion = ref<string>('')
+
+// 模态框相关
+const showInstallConfirm = ref(false)
+const pluginToInstall = ref<Plugin | null>(null)
+const installing = ref(false)
+const showMessage = ref(false)
+const messageType = ref<'success' | 'error'>('success')
+const messageContent = ref('')
 
 // 计算属性
 const categories = computed(() => {
@@ -244,6 +309,62 @@ const categories = computed(() => {
   })
   return Array.from(categorySet).sort()
 })
+
+// 版本比较函数
+const compareVersions = (version1: string, version2: string): number => {
+  const v1Parts = version1.split('.').map(Number)
+  const v2Parts = version2.split('.').map(Number)
+  
+  const maxLength = Math.max(v1Parts.length, v2Parts.length)
+  
+  for (let i = 0; i < maxLength; i++) {
+    const v1Part = v1Parts[i] || 0
+    const v2Part = v2Parts[i] || 0
+    
+    if (v1Part > v2Part) return 1
+    if (v1Part < v2Part) return -1
+  }
+  
+  return 0
+}
+
+// 检查插件是否兼容当前麦麦版本
+const isPluginCompatible = (plugin: Plugin): boolean => {
+  if (!currentMaiVersion.value || !plugin.manifest.host_application) {
+    return true // 如果版本信息不完整，默认兼容
+  }
+  
+  const currentVersion = currentMaiVersion.value
+  const minVersion = plugin.manifest.host_application.min_version
+  const maxVersion = plugin.manifest.host_application.max_version
+  
+  // 检查最低版本要求
+  if (minVersion && compareVersions(currentVersion, minVersion) < 0) {
+    return false
+  }
+  
+  // 检查最高版本限制（如果有的话）
+  if (maxVersion && compareVersions(currentVersion, maxVersion) > 0) {
+    return false
+  }
+  
+  return true
+}
+
+// 获取当前麦麦版本
+const fetchMaiVersion = async () => {
+  try {
+    const response = await api.get('/system/getMaiVersion')
+    if (response.data.status === 200) {
+      currentMaiVersion.value = response.data.data.version
+      console.log('当前麦麦版本:', currentMaiVersion.value)
+    } else {
+      console.warn('获取麦麦版本失败:', response.data.message)
+    }
+  } catch (error) {
+    console.error('获取麦麦版本失败:', error)
+  }
+}
 
 // 方法
 const fetchPlugins = async () => {
@@ -297,6 +418,15 @@ const filterPlugins = () => {
     }
   }
   
+  // 版本兼容性过滤
+  if (selectedCompatibility.value) {
+    if (selectedCompatibility.value === 'compatible') {
+      filtered = filtered.filter(plugin => isPluginCompatible(plugin))
+    } else if (selectedCompatibility.value === 'incompatible') {
+      filtered = filtered.filter(plugin => !isPluginCompatible(plugin))
+    }
+  }
+  
   // 排序
   filtered.sort((a, b) => {
     switch (sortBy.value) {
@@ -324,30 +454,53 @@ const setSortBy = (sort: string) => {
 }
 
 const handleInstall = async (plugin: Plugin) => {
-  // 显示安装确认对话框
-  const confirmed = confirm(`确定要安装插件 "${plugin.manifest.name}" 吗？\n\n这将从仓库克隆插件代码到本地。`)
+  // 显示安装确认模态框
+  pluginToInstall.value = plugin
+  showInstallConfirm.value = true
+}
+
+const cancelInstall = () => {
+  showInstallConfirm.value = false
+  pluginToInstall.value = null
+}
+
+const confirmInstall = async () => {
+  if (!pluginToInstall.value) return
   
-  if (!confirmed) {
-    return
-  }
+  installing.value = true
   
   try {
-    loading.value = true
     const response = await api.post('/pluginMarket/install', {
-      plugin_id: plugin.id
+      plugin_id: pluginToInstall.value.id
     })
     
     if (response.data.status === 200) {
-      alert(`插件 "${plugin.manifest.name}" 安装成功！`)
+      showInstallConfirm.value = false
+      showMessageModal('success', `插件 "${pluginToInstall.value.manifest.name}" 安装成功！`)
+      // 刷新插件列表以更新安装状态
+      await fetchPlugins()
     } else {
       throw new Error(response.data.message || '安装失败')
     }
   } catch (err: any) {
     console.error('安装插件失败:', err)
-    alert(`安装失败: ${err.message || '未知错误'}`)
+    showInstallConfirm.value = false
+    showMessageModal('error', `安装失败: ${err.message || '未知错误'}`)
   } finally {
-    loading.value = false
+    installing.value = false
+    pluginToInstall.value = null
   }
+}
+
+const showMessageModal = (type: 'success' | 'error', content: string) => {
+  messageType.value = type
+  messageContent.value = content
+  showMessage.value = true
+}
+
+const closeMessage = () => {
+  showMessage.value = false
+  messageContent.value = ''
 }
 
 const handleViewDetails = (plugin: Plugin) => {
@@ -355,7 +508,8 @@ const handleViewDetails = (plugin: Plugin) => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
+  await fetchMaiVersion()
   fetchPlugins()
 })
 </script>

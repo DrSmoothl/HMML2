@@ -16,7 +16,7 @@
             >
               <Icon v-if="!testing" icon="mdi:wifi" class="w-4 h-4" />
               <span v-else class="loading loading-spinner loading-xs"></span>
-              {{ testing ? '测试中...' : '测试连接' }}
+              {{ testing ? '测试中...' : '测试可用性' }}
             </button>
             <button 
               class="btn btn-success btn-sm"
@@ -98,6 +98,19 @@
                     >
                       <Icon icon="mdi:delete" class="w-4 h-4" />
                     </button>
+                  </div>
+                </div>
+
+                <!-- 不可用状态提示 -->
+                <div 
+                  v-if="providerStatuses[provider.name] === 'error'" 
+                  class="alert alert-warning mb-4"
+                >
+                  <Icon icon="mdi:alert-circle" class="w-5 h-5" />
+                  <div class="text-sm">
+                    <span class="font-medium">API服务商不可用</span>
+                    <br>
+                    请检查基础URL和API Key是否正确配置
                   </div>
                 </div>
 
@@ -430,7 +443,7 @@
                 <div class="grid grid-cols-1 gap-4">
                   <div class="form-control">
                     <div class="label">
-                      <span class="label-text font-medium">使用的模型</span>
+                      <span class="label-text font-medium w-32">使用的模型</span>
                     </div>
                     <select 
                       class="select select-bordered select-sm"
@@ -447,7 +460,7 @@
                   <!-- 温度参数 - 仅对需要的任务类型显示 -->
                   <div class="form-control" v-if="shouldShowTemperature(taskType.key) && config.model_task_config[taskType.key].temperature !== undefined">
                     <div class="label">
-                      <span class="label-text font-medium">温度参数</span>
+                      <span class="label-text font-medium w-32">温度参数</span>
                       <span class="label-text-alt font-mono min-w-[3rem] text-right">{{ (config.model_task_config[taskType.key].temperature || 0).toFixed(1) }}</span>
                     </div>
                     <div class="px-2">
@@ -476,7 +489,7 @@
                   <!-- 最大Token数 - 仅对需要的任务类型显示 -->
                   <div class="form-control" v-if="shouldShowMaxTokens(taskType.key) && config.model_task_config[taskType.key].max_tokens !== undefined">
                     <div class="label">
-                      <span class="label-text font-medium">最大输出 Token 数</span>
+                      <span class="label-text font-medium w-32">最大输出 Token 数</span>
                     </div>
                     <input 
                       type="number" 
@@ -865,8 +878,8 @@ const toggleApiKeyVisibility = (providerName: string) => {
 const getProviderStatus = (providerName: string): string => {
   const status = providerStatuses.value[providerName]
   switch (status) {
-    case 'connected': return '已连接'
-    case 'error': return '连接失败'
+    case 'connected': return '可用'
+    case 'error': return '不可用'
     default: return '未知'
   }
 }
@@ -960,15 +973,21 @@ const testAllConnections = async () => {
   
   for (const provider of config.value.api_providers) {
     try {
-      const connected = await ModelConfigApi.testProviderConnection(provider.name)
-      providerStatuses.value[provider.name] = connected ? 'connected' : 'error'
+      // 使用获取模型列表API来测试连接状态
+      const models = await ModelConfigApi.getModels({
+        api_url: provider.base_url,
+        api_key: provider.api_key
+      })
+      // 如果能成功获取模型列表，说明API提供商可用
+      providerStatuses.value[provider.name] = models.length > 0 ? 'connected' : 'error'
     } catch (error) {
+      console.error(`测试提供商 ${provider.name} 不可用:`, error)
       providerStatuses.value[provider.name] = 'error'
     }
   }
   
   testing.value = false
-  showMessage('success', '连接测试完成')
+  showMessage('success', '可用性测试完成')
 }
 
 // Provider management
@@ -1517,6 +1536,11 @@ onMounted(() => {
   .text-lg {
     font-size: 1rem;
   }
+  
+  /* 在中等屏幕上稍微减少标签宽度 */
+  .w-32 {
+    width: 7rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1531,6 +1555,17 @@ onMounted(() => {
   .btn {
     font-size: 0.75rem;
     padding: 0.5rem 1rem;
+  }
+  
+  /* 在小屏幕上进一步减少标签宽度 */
+  .w-32 {
+    width: 5rem;
+  }
+  
+  /* 小屏幕上的标签文字可以换行 */
+  .label-text {
+    line-height: 1.2;
+    word-break: break-words;
   }
 }
 </style>

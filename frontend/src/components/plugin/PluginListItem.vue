@@ -30,6 +30,19 @@
                 <div class="badge badge-outline">
                   v{{ plugin.manifest.version || '0.0.0' }}
                 </div>
+                <!-- 兼容性状态 -->
+                <div 
+                  v-if="currentVersion"
+                  class="badge badge-xs"
+                  :class="isCompatible ? 'badge-success' : 'badge-warning'"
+                  :title="getCompatibilityTooltip()"
+                >
+                  <Icon 
+                    :icon="isCompatible ? 'mdi:check-circle' : 'mdi:alert-circle'" 
+                    class="text-xs mr-1" 
+                  />
+                  {{ isCompatible ? '兼容' : '不兼容' }}
+                </div>
                 <div 
                   v-if="plugin.installed" 
                   class="badge badge-success badge-xs gap-1"
@@ -203,6 +216,8 @@ interface Plugin {
 // Props
 const props = defineProps<{
   plugin: Plugin
+  isCompatible?: boolean
+  currentVersion?: string
 }>()
 
 // Emits
@@ -216,6 +231,28 @@ const getPluginInitial = () => {
   const name = props.plugin?.manifest?.name
   if (!name) return '?'
   return name.charAt(0).toUpperCase()
+}
+
+const getCompatibilityTooltip = () => {
+  if (!props.currentVersion || !props.plugin.manifest.host_application) {
+    return '版本信息不完整'
+  }
+  
+  const minVersion = props.plugin.manifest.host_application.min_version
+  const maxVersion = props.plugin.manifest.host_application.max_version
+  
+  if (props.isCompatible) {
+    return `与当前麦麦版本 ${props.currentVersion} 兼容`
+  } else {
+    let tooltip = `与当前麦麦版本 ${props.currentVersion} 不兼容\n`
+    tooltip += `要求版本: ${minVersion}`
+    if (maxVersion) {
+      tooltip += ` - ${maxVersion}`
+    } else {
+      tooltip += ' 及以上'
+    }
+    return tooltip
+  }
 }
 </script>
 
