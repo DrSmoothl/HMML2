@@ -6,8 +6,8 @@
         <div class="flex items-center gap-4">
           <!-- 插件图标 -->
           <div class="avatar placeholder">
-            <div class="bg-gradient-to-r from-primary to-secondary text-primary-content rounded-xl w-20 h-20">
-              <span class="text-3xl font-bold">{{ getPluginInitial() }}</span>
+            <div class="bg-sky-500 text-white rounded-xl w-20 h-20 relative">
+              <span class="text-3xl font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">{{ getPluginInitial() }}</span>
             </div>
           </div>
           
@@ -353,20 +353,13 @@ const getPluginInitial = () => {
   background: hsl(var(--bc) / 0.5);
 }
 
-/* 头像渐变动画 */
-.avatar .bg-gradient-to-r {
-  animation: gradientPulse 4s ease-in-out infinite;
+/* 头像样式 */
+.avatar .bg-sky-500 {
+  transition: all 0.3s ease;
 }
 
-@keyframes gradientPulse {
-  0%, 100% {
-    background: linear-gradient(45deg, hsl(var(--p)), hsl(var(--s)));
-    transform: scale(1);
-  }
-  50% {
-    background: linear-gradient(225deg, hsl(var(--p)), hsl(var(--s)));
-    transform: scale(1.05);
-  }
+.avatar .bg-sky-500:hover {
+  transform: scale(1.05);
 }
 
 /* 卡片悬停效果 */

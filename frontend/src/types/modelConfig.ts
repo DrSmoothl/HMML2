@@ -36,6 +36,7 @@ export interface ModelTaskConfigs {
   utils_small: ModelTaskConfig
   replyer: ModelTaskConfig
   planner: ModelTaskConfig
+  planner_small: ModelTaskConfig
   emotion: ModelTaskConfig
   vlm: ModelTaskConfig
   voice: ModelTaskConfig
@@ -126,16 +127,17 @@ export const CLIENT_TYPES = [
 
 // 任务配置类型选项
 export const TASK_CONFIG_TYPES = [
-  { key: 'utils', label: '通用工具', description: '在麦麦的一些组件中使用的模型，例如表情包模块，取名模块，关系模块' },
-  { key: 'utils_small', label: '小型工具', description: '消耗量较大，建议使用速度较快的小模型' },
-  { key: 'replyer', label: '首要回复', description: '首要回复模型，还用于表达器和表达方式学习' },
-  { key: 'planner', label: '决策规划', description: '负责决定麦麦该做什么的模型' },
+  { key: 'utils', label: '通用工具', description: '在麦麦的一些组件中使用的模型，例如表情包模块，取名模块，关系模块，是麦麦必须的模型。建议温度0.1-0.3' },
+  { key: 'utils_small', label: '小型工具', description: '在麦麦的一些组件中使用的小模型，消耗量较大，建议使用速度较快的小模型' },
+  { key: 'replyer', label: '首要回复', description: '首要回复模型，还用于表达器和表达方式学习。建议温度0.1-0.3' },
+  { key: 'planner', label: '主决策', description: '决策：负责决定麦麦该什么时候回复的模型' },
+  { key: 'planner_small', label: '副决策', description: '副决策：负责决定麦麦该做什么的模型' },
   { key: 'emotion', label: '情绪管理', description: '负责麦麦的情绪变化' },
-  { key: 'vlm', label: '图像识别', description: '图像识别模型' },
-  { key: 'voice', label: '语音识别', description: '语音识别模型' },
+  { key: 'vlm', label: '图像识别', description: '图像识别模型，用于处理视觉内容' },
+  { key: 'voice', label: '语音识别', description: '语音识别模型，用于语音转文字' },
   { key: 'tool_use', label: '工具调用', description: '工具调用模型，需要使用支持工具调用的模型' },
   { key: 'embedding', label: '嵌入模型', description: '用于向量嵌入的模型' },
-  { key: 'lpmm_entity_extract', label: 'LPMM实体提取', description: '实体提取模型' },
-  { key: 'lpmm_rdf_build', label: 'LPMM RDF构建', description: 'RDF构建模型' },
-  { key: 'lpmm_qa', label: 'LPMM问答', description: '问答模型' }
+  { key: 'lpmm_entity_extract', label: 'LPMM实体提取', description: '实体提取模型，用于知识库构建' },
+  { key: 'lpmm_rdf_build', label: 'LPMM RDF构建', description: 'RDF构建模型，用于知识图谱构建' },
+  { key: 'lpmm_qa', label: 'LPMM问答', description: '问答模型，用于知识库问答' }
 ] as const

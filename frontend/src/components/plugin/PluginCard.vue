@@ -6,8 +6,8 @@
         <div class="flex items-start gap-3 flex-1 min-w-0">
           <!-- 插件图标/占位符 -->
           <div class="avatar placeholder flex-shrink-0">
-            <div class="bg-gradient-to-r from-primary to-secondary text-primary-content rounded-lg w-12 h-12">
-              <span class="text-xl font-bold">{{ getPluginInitial() }}</span>
+            <div class="bg-sky-500 text-white rounded-lg w-12 h-12 relative">
+              <span class="text-lg font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">{{ getPluginInitial() }}</span>
             </div>
           </div>
           
@@ -256,18 +256,13 @@ const getPluginInitial = () => {
   left: 100%;
 }
 
-/* 头像渐变动画 */
-.avatar .bg-gradient-to-r {
-  animation: gradientRotate 3s ease-in-out infinite;
+/* 头像样式 */
+.avatar .bg-sky-500 {
+  transition: all 0.3s ease;
 }
 
-@keyframes gradientRotate {
-  0%, 100% {
-    background: linear-gradient(45deg, hsl(var(--p)), hsl(var(--s)));
-  }
-  50% {
-    background: linear-gradient(225deg, hsl(var(--p)), hsl(var(--s)));
-  }
+.avatar .bg-sky-500:hover {
+  transform: scale(1.05);
 }
 
 /* 徽章动画 */

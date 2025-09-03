@@ -408,18 +408,29 @@
             <div 
               v-for="taskType in taskConfigTypes" 
               :key="taskType.key"
-              class="card bg-base-200 border border-base-300"
+              class="card border border-base-300"
+              :class="getTaskCardClass(taskType.key)"
             >
               <div class="card-body p-4">
                 <div class="mb-4">
-                  <h3 class="font-semibold text-base-content">{{ taskType.label }}</h3>
+                  <div class="flex items-center gap-3 mb-2">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg" :class="getTaskIconClass(taskType.key)">
+                      <Icon :icon="getTaskIcon(taskType.key)" class="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-base-content">{{ taskType.label }}</h3>
+                      <div class="badge badge-outline badge-xs" :class="getTaskTypeClass(taskType.key)">
+                        {{ getTaskCategory(taskType.key) }}
+                      </div>
+                    </div>
+                  </div>
                   <p class="text-sm text-base-content/70">{{ taskType.description }}</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-4">
                   <div class="form-control">
                     <div class="label">
-                      <span class="label-text font-medium w-24">使用的模型</span>
+                      <span class="label-text font-medium">使用的模型</span>
                     </div>
                     <select 
                       class="select select-bordered select-sm"
@@ -433,9 +444,10 @@
                     </select>
                   </div>
 
-                  <div class="form-control" v-if="config.model_task_config[taskType.key].temperature !== undefined">
+                  <!-- 温度参数 - 仅对需要的任务类型显示 -->
+                  <div class="form-control" v-if="shouldShowTemperature(taskType.key) && config.model_task_config[taskType.key].temperature !== undefined">
                     <div class="label">
-                      <span class="label-text font-medium w-24">温度参数</span>
+                      <span class="label-text font-medium">温度参数</span>
                       <span class="label-text-alt font-mono min-w-[3rem] text-right">{{ (config.model_task_config[taskType.key].temperature || 0).toFixed(1) }}</span>
                     </div>
                     <div class="px-2">
@@ -454,11 +466,17 @@
                         <span class="text-right flex-1">创造 (2)</span>
                       </div>
                     </div>
+                    <!-- 针对特定任务类型的温度建议 -->
+                    <div class="text-xs text-base-content/60 mt-1" v-if="getTemperatureRecommendation(taskType.key)">
+                      <Icon icon="mdi:lightbulb-outline" class="inline w-3 h-3 mr-1" />
+                      {{ getTemperatureRecommendation(taskType.key) }}
+                    </div>
                   </div>
 
-                  <div class="form-control" v-if="config.model_task_config[taskType.key].max_tokens !== undefined">
+                  <!-- 最大Token数 - 仅对需要的任务类型显示 -->
+                  <div class="form-control" v-if="shouldShowMaxTokens(taskType.key) && config.model_task_config[taskType.key].max_tokens !== undefined">
                     <div class="label">
-                      <span class="label-text font-medium w-24">最大输出 Token 数</span>
+                      <span class="label-text font-medium">最大输出 Token 数</span>
                     </div>
                     <input 
                       type="number" 
@@ -468,6 +486,15 @@
                       min="1"
                       max="8192"
                     />
+                  </div>
+
+                  <!-- 特殊配置提示 -->
+                  <div v-if="getSpecialConfigNote(taskType.key)" class="alert alert-info">
+                    <Icon icon="mdi:information-outline" />
+                    <div>
+                      <h4 class="font-bold">配置说明</h4>
+                      <div class="text-sm">{{ getSpecialConfigNote(taskType.key) }}</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1110,8 +1137,400 @@ const deleteModel = async (name: string, index: number) => {
   }
 }
 
+// 任务配置相关方法
+const shouldShowTemperature = (taskKey: string): boolean => {
+  // 这些任务类型不需要温度参数
+  const noTemperatureTasks = ['vlm', 'voice', 'embedding']
+  return !noTemperatureTasks.includes(taskKey)
+}
+
+const shouldShowMaxTokens = (taskKey: string): boolean => {
+  // 这些任务类型不需要max_tokens参数
+  const noMaxTokensTasks = ['voice', 'embedding']
+  return !noMaxTokensTasks.includes(taskKey)
+}
+
+const getTemperatureRecommendation = (taskKey: string): string => {
+  const recommendations: Record<string, string> = {
+    'utils': '建议 0.1-0.3，确保麦麦功能组件稳定运行',
+    'replyer': '建议 0.1-0.3，保证回复质量一致性',
+    'planner': '建议 0.3，平衡决策准确性和灵活性',
+    'planner_small': '建议 0.3，保持副决策的合理性',
+    'utils_small': '建议 0.7，适当增加小模型的创造性',
+    'emotion': '建议 0.7，让情绪变化更自然',
+    'tool_use': '建议 0.7，工具调用需要一定灵活性',
+    'lpmm_entity_extract': '建议 0.2，确保实体提取准确性',
+    'lpmm_rdf_build': '建议 0.2，保证知识图谱构建质量',
+    'lpmm_qa': '建议 0.7，问答需要一定创造性'
+  }
+  return recommendations[taskKey] || ''
+}
+
+const getSpecialConfigNote = (taskKey: string): string => {
+  const notes: Record<string, string> = {
+    'vlm': '图像识别模型，只需配置模型和最大Token数，不需要温度参数',
+    'voice': '语音识别模型，只需配置模型，不需要温度和Token参数',
+    'embedding': '嵌入模型，只需配置模型，用于向量化处理',
+    'tool_use': '需要选择支持工具调用（Function Calling）的模型',
+    'utils': '麦麦核心功能必需的模型，请选择稳定可靠的模型',
+    'replyer': '主要回复模型，直接影响麦麦的对话质量'
+  }
+  return notes[taskKey] || ''
+}
+
+// 任务卡片样式相关方法
+const getTaskCardClass = (taskKey: string): string => {
+  const cardClasses: Record<string, string> = {
+    'utils': 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/50',
+    'utils_small': 'bg-cyan-50 border-cyan-200 dark:bg-cyan-950/30 dark:border-cyan-800/50',
+    'replyer': 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800/50',
+    'planner': 'bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:border-purple-800/50',
+    'planner_small': 'bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800/50',
+    'emotion': 'bg-pink-50 border-pink-200 dark:bg-pink-950/30 dark:border-pink-800/50',
+    'vlm': 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800/50',
+    'voice': 'bg-teal-50 border-teal-200 dark:bg-teal-950/30 dark:border-teal-800/50',
+    'tool_use': 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800/50',
+    'embedding': 'bg-gray-50 border-gray-200 dark:bg-gray-800/30 dark:border-gray-700/50',
+    'lpmm_entity_extract': 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/50',
+    'lpmm_rdf_build': 'bg-lime-50 border-lime-200 dark:bg-lime-950/30 dark:border-lime-800/50',
+    'lpmm_qa': 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/50'
+  }
+  return cardClasses[taskKey] || 'bg-base-200'
+}
+
+const getTaskIconClass = (taskKey: string): string => {
+  const iconClasses: Record<string, string> = {
+    'utils': 'bg-primary text-primary-content',
+    'utils_small': 'bg-secondary text-secondary-content',
+    'replyer': 'bg-success text-success-content',
+    'planner': 'bg-accent text-accent-content',
+    'planner_small': 'bg-accent text-accent-content',
+    'emotion': 'bg-warning text-warning-content',
+    'vlm': 'bg-info text-info-content',
+    'voice': 'bg-primary text-primary-content',
+    'tool_use': 'bg-secondary text-secondary-content',
+    'embedding': 'bg-neutral text-neutral-content',
+    'lpmm_entity_extract': 'bg-warning text-warning-content',
+    'lpmm_rdf_build': 'bg-success text-success-content',
+    'lpmm_qa': 'bg-info text-info-content'
+  }
+  return iconClasses[taskKey] || 'bg-primary text-primary-content'
+}
+
+const getTaskIcon = (taskKey: string): string => {
+  const icons: Record<string, string> = {
+    'utils': 'mdi:tools',
+    'utils_small': 'mdi:wrench',
+    'replyer': 'mdi:message-reply',
+    'planner': 'mdi:brain',
+    'planner_small': 'mdi:head-lightbulb',
+    'emotion': 'mdi:emoticon-happy',
+    'vlm': 'mdi:image-multiple',
+    'voice': 'mdi:microphone',
+    'tool_use': 'mdi:hammer-wrench',
+    'embedding': 'mdi:vector-arrange-below',
+    'lpmm_entity_extract': 'mdi:text-search',
+    'lpmm_rdf_build': 'mdi:graph',
+    'lpmm_qa': 'mdi:help-circle'
+  }
+  return icons[taskKey] || 'mdi:cog'
+}
+
+const getTaskTypeClass = (taskKey: string): string => {
+  if (taskKey.startsWith('lpmm_')) {
+    return 'badge-warning'
+  }
+  if (['utils', 'utils_small', 'replyer'].includes(taskKey)) {
+    return 'badge-primary'
+  }
+  if (['planner', 'planner_small'].includes(taskKey)) {
+    return 'badge-secondary'
+  }
+  if (['vlm', 'voice', 'embedding'].includes(taskKey)) {
+    return 'badge-info'
+  }
+  return 'badge-accent'
+}
+
+const getTaskCategory = (taskKey: string): string => {
+  if (taskKey.startsWith('lpmm_')) {
+    return 'LPMM知识库'
+  }
+  if (['utils', 'utils_small', 'replyer'].includes(taskKey)) {
+    return '核心功能'
+  }
+  if (['planner', 'planner_small'].includes(taskKey)) {
+    return '决策系统'
+  }
+  if (['vlm', 'voice', 'embedding'].includes(taskKey)) {
+    return '专用模型'
+  }
+  if (['emotion', 'tool_use'].includes(taskKey)) {
+    return '扩展功能'
+  }
+  return '其他'
+}
+
 // 生命周期
 onMounted(() => {
   loadConfig()
 })
 </script>
+
+<style scoped>
+/* 任务卡片颜色样式 */
+.bg-blue-50 {
+  background-color: rgb(239 246 255);
+}
+.border-blue-200 {
+  border-color: rgb(191 219 254);
+}
+.bg-cyan-50 {
+  background-color: rgb(236 254 255);
+}
+.border-cyan-200 {
+  border-color: rgb(165 243 252);
+}
+.bg-green-50 {
+  background-color: rgb(240 253 244);
+}
+.border-green-200 {
+  border-color: rgb(187 247 208);
+}
+.bg-purple-50 {
+  background-color: rgb(250 245 255);
+}
+.border-purple-200 {
+  border-color: rgb(221 214 254);
+}
+.bg-violet-50 {
+  background-color: rgb(245 243 255);
+}
+.border-violet-200 {
+  border-color: rgb(221 214 254);
+}
+.bg-pink-50 {
+  background-color: rgb(253 242 248);
+}
+.border-pink-200 {
+  border-color: rgb(251 207 232);
+}
+.bg-orange-50 {
+  background-color: rgb(255 247 237);
+}
+.border-orange-200 {
+  border-color: rgb(254 215 170);
+}
+.bg-teal-50 {
+  background-color: rgb(240 253 250);
+}
+.border-teal-200 {
+  border-color: rgb(153 246 228);
+}
+.bg-indigo-50 {
+  background-color: rgb(238 242 255);
+}
+.border-indigo-200 {
+  border-color: rgb(199 210 254);
+}
+.bg-amber-50 {
+  background-color: rgb(255 251 235);
+}
+.border-amber-200 {
+  border-color: rgb(253 230 138);
+}
+.bg-lime-50 {
+  background-color: rgb(247 254 231);
+}
+.border-lime-200 {
+  border-color: rgb(217 249 157);
+}
+.bg-emerald-50 {
+  background-color: rgb(236 253 245);
+}
+.border-emerald-200 {
+  border-color: rgb(167 243 208);
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .bg-blue-50,
+.dark .bg-blue-50 {
+  background-color: rgba(30, 58, 138, 0.3);
+}
+[data-theme="dark"] .border-blue-200,
+.dark .border-blue-200 {
+  border-color: rgba(30, 64, 175, 0.5);
+}
+[data-theme="dark"] .bg-cyan-50,
+.dark .bg-cyan-50 {
+  background-color: rgba(22, 78, 99, 0.3);
+}
+[data-theme="dark"] .border-cyan-200,
+.dark .border-cyan-200 {
+  border-color: rgba(21, 94, 117, 0.5);
+}
+[data-theme="dark"] .bg-green-50,
+.dark .bg-green-50 {
+  background-color: rgba(20, 83, 45, 0.3);
+}
+[data-theme="dark"] .border-green-200,
+.dark .border-green-200 {
+  border-color: rgba(22, 101, 52, 0.5);
+}
+[data-theme="dark"] .bg-purple-50,
+.dark .bg-purple-50 {
+  background-color: rgba(88, 28, 135, 0.3);
+}
+[data-theme="dark"] .border-purple-200,
+.dark .border-purple-200 {
+  border-color: rgba(107, 33, 168, 0.5);
+}
+[data-theme="dark"] .bg-violet-50,
+.dark .bg-violet-50 {
+  background-color: rgba(76, 29, 149, 0.3);
+}
+[data-theme="dark"] .border-violet-200,
+.dark .border-violet-200 {
+  border-color: rgba(91, 33, 182, 0.5);
+}
+[data-theme="dark"] .bg-pink-50,
+.dark .bg-pink-50 {
+  background-color: rgba(131, 24, 67, 0.3);
+}
+[data-theme="dark"] .border-pink-200,
+.dark .border-pink-200 {
+  border-color: rgba(157, 23, 77, 0.5);
+}
+[data-theme="dark"] .bg-orange-50,
+.dark .bg-orange-50 {
+  background-color: rgba(154, 52, 18, 0.3);
+}
+[data-theme="dark"] .border-orange-200,
+.dark .border-orange-200 {
+  border-color: rgba(194, 65, 12, 0.5);
+}
+[data-theme="dark"] .bg-teal-50,
+.dark .bg-teal-50 {
+  background-color: rgba(19, 78, 74, 0.3);
+}
+[data-theme="dark"] .border-teal-200,
+.dark .border-teal-200 {
+  border-color: rgba(17, 94, 89, 0.5);
+}
+[data-theme="dark"] .bg-indigo-50,
+.dark .bg-indigo-50 {
+  background-color: rgba(55, 48, 163, 0.3);
+}
+[data-theme="dark"] .border-indigo-200,
+.dark .border-indigo-200 {
+  border-color: rgba(67, 56, 202, 0.5);
+}
+[data-theme="dark"] .bg-amber-50,
+.dark .bg-amber-50 {
+  background-color: rgba(146, 64, 14, 0.3);
+}
+[data-theme="dark"] .border-amber-200,
+.dark .border-amber-200 {
+  border-color: rgba(180, 83, 9, 0.5);
+}
+[data-theme="dark"] .bg-lime-50,
+.dark .bg-lime-50 {
+  background-color: rgba(54, 83, 20, 0.3);
+}
+[data-theme="dark"] .border-lime-200,
+.dark .border-lime-200 {
+  border-color: rgba(77, 124, 15, 0.5);
+}
+[data-theme="dark"] .bg-emerald-50,
+.dark .bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.3);
+}
+[data-theme="dark"] .border-emerald-200,
+.dark .border-emerald-200 {
+  border-color: rgba(5, 150, 105, 0.5);
+}
+
+/* 卡片悬停效果 */
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* 任务图标动画 */
+.task-icon {
+  transition: all 0.3s ease;
+}
+
+.task-icon:hover {
+  transform: scale(1.1);
+}
+
+/* 滑块样式增强 */
+.range {
+  transition: all 0.2s ease;
+}
+
+.range:hover {
+  filter: brightness(1.1);
+}
+
+/* 徽章动画 */
+.badge {
+  transition: all 0.2s ease;
+}
+
+.badge:hover {
+  transform: scale(1.05);
+}
+
+/* 温度建议文本样式 */
+.temperature-hint {
+  background: linear-gradient(135deg, hsl(var(--p) / 0.1), hsl(var(--s) / 0.1));
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* 特殊配置提示样式 */
+.config-note {
+  background: linear-gradient(135deg, hsl(var(--in) / 0.1), hsl(var(--su) / 0.1));
+  border: 1px solid hsl(var(--in) / 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .grid-cols-1.md\\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .text-lg {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .space-y-6 {
+    gap: 1rem;
+  }
+  
+  .card-body {
+    padding: 0.75rem;
+  }
+  
+  .btn {
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+}
+</style>
