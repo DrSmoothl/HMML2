@@ -165,24 +165,6 @@
         </ul>
       </div>
     </div>
-    
-    <!-- Footer Info -->
-    <div class="p-4 border-t border-base-300 flex-shrink-0">
-      <div class="text-center">
-        <div class="flex items-center justify-center gap-2 mb-2">
-          <div 
-            class="w-2 h-2 rounded-full"
-            :class="isConnected ? 'bg-success' : 'bg-error'"
-          ></div>
-          <span class="text-xs text-base-content/70">
-            {{ isConnected ? '已连接' : '未连接' }}
-          </span>
-        </div>
-        <p class="text-xs text-base-content/50">
-          Version 1.0.0
-        </p>
-      </div>
-    </div>
   </aside>
 </template>
 
@@ -198,9 +180,6 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
-
-// 模拟连接状态，实际应用中应该从 store 获取
-const isConnected = computed(() => true)
 
 // 计算当前展开的菜单节
 const isSettingsSectionOpen = computed(() => {
