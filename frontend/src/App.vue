@@ -132,6 +132,12 @@
     >
       <div class="loading loading-spinner loading-lg text-primary"></div>
     </div>
+
+    <!-- 全屏 Token 验证模态（未验证前阻挡一切交互） -->
+    <TokenGateModal
+      v-if="!tokenValidated"
+      @validated="handleTokenValidated"
+    />
   </div>
 </template>
 
@@ -141,6 +147,7 @@ import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import WelcomeSetup from '@/components/setup/WelcomeSetup.vue'
+import TokenGateModal from '@/components/security/TokenGateModal.vue'
 import api from '@/utils/api'
 
 const route = useRoute()
@@ -150,6 +157,7 @@ const appStore = useAppStore()
 const isSidebarOpen = ref(false)
 const showSetup = ref(false)
 const isOneKeyEnv = ref(false)
+const tokenValidated = ref(localStorage.getItem('access_token_valid') === '1')
 
 // 计算属性
 const isLoading = computed(() => appStore.isLoading)
@@ -192,6 +200,10 @@ const checkSetupRequired = () => {
 const handleSetupComplete = () => {
   showSetup.value = false
   localStorage.setItem('setup-completed', 'true')
+}
+
+const handleTokenValidated = () => {
+  tokenValidated.value = true
 }
 
 // 重置设置（用于测试或重新配置）

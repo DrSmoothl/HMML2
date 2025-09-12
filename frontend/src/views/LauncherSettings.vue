@@ -94,20 +94,163 @@
         </div>
       </div>
     </div>
+
+    <!-- Token 管理 -->
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body space-y-4">
+        <h3 class="card-title text-lg">访问 Token 管理</h3>
+        <p class="text-sm text-base-content/70 leading-relaxed">
+          再生访问 Token 将使现有所有已验证的前端实例在下次刷新时被重新要求输入新 Token。此操作不可逆，旧 Token 立即失效，请务必在关闭窗口前复制并妥善保存新 Token。
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button class="btn btn-error btn-sm" :disabled="regenerating" @click="openConfirmModal">
+            <span v-if="!regenerating">再生访问 Token</span>
+            <span v-else class="loading loading-spinner"></span>
+          </button>
+          <button v-if="newToken && !showTokenModal" class="btn btn-outline btn-sm" @click="showTokenModal = true">再次查看刚生成的 Token</button>
+        </div>
+        <p v-if="errorMsg" class="text-error text-sm">{{ errorMsg }}</p>
+        <p v-if="successMsg" class="text-success text-sm">{{ successMsg }}</p>
+      </div>
+    </div>
+
+    <!-- 再生二次确认模态 -->
+    <div v-if="showConfirmModal" class="fixed inset-0 z-[1150] flex items-center justify-center bg-base-200/90 backdrop-blur-sm p-4">
+      <div class="w-full max-w-md">
+        <div class="card bg-base-100 shadow-xl border border-base-300">
+          <div class="card-body space-y-4">
+            <h2 class="card-title text-lg">确认再生访问 Token</h2>
+            <div class="text-sm space-y-2 leading-relaxed">
+              <p>此操作将立即使当前 Token 失效，所有前端会在刷新后被要求输入新 Token。</p>
+              <p class="font-medium text-warning">请在下方输入 <code class="px-1 py-0.5 bg-base-200 rounded text-xs">REGENERATE</code> 以确认。</p>
+            </div>
+            <div class="space-y-2">
+              <input v-model="confirmText" type="text" class="input input-bordered w-full"
+                     placeholder="输入 REGENERATE 以继续" autocomplete="off" />
+              <p v-if="confirmText && confirmText !== 'REGENERATE'" class="text-xs text-error">输入不匹配</p>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button class="btn btn-ghost btn-sm" @click="closeConfirmModal" :disabled="regenerating">取消</button>
+              <button class="btn btn-error btn-sm" :disabled="confirmText !== 'REGENERATE' || regenerating" @click="confirmRegenerate">
+                <span v-if="!regenerating">确认再生</span>
+                <span v-else class="loading loading-spinner"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新 Token 一次性展示模态 -->
+    <div v-if="showTokenModal" class="fixed inset-0 z-[1200] flex items-center justify-center bg-base-200/90 backdrop-blur-sm p-4">
+      <div class="w-full max-w-lg">
+        <div class="card bg-base-100 shadow-2xl border border-base-300">
+          <div class="card-body space-y-4">
+            <h2 class="card-title text-lg">新访问 Token 已生成</h2>
+            <div class="alert alert-warning text-sm leading-relaxed">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <div>
+                <p class="font-semibold">请立即复制保存！</p>
+                <p>关闭本窗口后将无法再次从服务器获取此明文 Token（除非再次再生）。</p>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm text-base-content/70">新 Token：</label>
+              <div class="flex items-stretch gap-2">
+                <input :value="newToken" readonly class="input input-bordered flex-1 font-mono text-sm" />
+                <button class="btn btn-outline" @click="copyToken" :disabled="!newToken || copied">
+                  <span v-if="!copied">复制</span>
+                  <span v-else>已复制</span>
+                </button>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button class="btn btn-ghost" @click="closeTokenModal(false)">稍后再说</button>
+              <button class="btn btn-primary" @click="closeTokenModal(true)">我已复制</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// import { ref } from 'vue'
+import { ref } from 'vue'
+import api from '@/utils/api'
 
-// 主题设置
-// const selectedTheme = ref('auto')
+// Token 再生状态
+const regenerating = ref(false)
+const newToken = ref<string | null>(null)
+const showTokenModal = ref(false)
+const showConfirmModal = ref(false)
+const confirmText = ref('')
+const errorMsg = ref('')
+const successMsg = ref('')
+const copied = ref(false)
 
-// const handleThemeChange = (theme: string) => {
-//   selectedTheme.value = theme
-//   // 这里可以添加实际的主题切换逻辑
-//   console.log('切换主题到:', theme)
-// }
+const openConfirmModal = () => {
+  confirmText.value = ''
+  showConfirmModal.value = true
+}
+
+const closeConfirmModal = () => {
+  if (regenerating.value) return
+  showConfirmModal.value = false
+}
+
+const confirmRegenerate = async () => {
+  if (confirmText.value !== 'REGENERATE' || regenerating.value) return
+  await regenerateToken()
+  showConfirmModal.value = false
+}
+
+const regenerateToken = async () => {
+  regenerating.value = true
+  errorMsg.value = ''
+  successMsg.value = ''
+  copied.value = false
+  try {
+    const res = await api.post('/system/regenerateToken', {})
+    const token = res.data?.data?.token
+    if (token) {
+      newToken.value = token
+      showTokenModal.value = true
+      successMsg.value = '再生成功，请及时复制新 Token'
+      // 既然旧 token 失效，应清除本地验证，下次刷新会重新要求输入
+      localStorage.removeItem('access_token_valid')
+    } else {
+      throw new Error('未返回新 Token')
+    }
+  } catch (e: any) {
+    errorMsg.value = e?.message || '再生失败'
+  } finally {
+    regenerating.value = false
+  }
+}
+
+const copyToken = async () => {
+  if (!newToken.value) return
+  try {
+    await navigator.clipboard.writeText(newToken.value)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 3000)
+  } catch (e) {
+    errorMsg.value = '复制失败，请手动选择复制'
+  }
+}
+
+const closeTokenModal = (ack: boolean) => {
+  showTokenModal.value = false
+  if (ack) {
+    // 提示刷新以触发重新验证流程
+    setTimeout(() => {
+      if (window.confirm('是否立即刷新页面以使用新 Token？')) {
+        window.location.reload()
+      }
+    }, 100)
+  }
+}
 </script>
 
 <style scoped>

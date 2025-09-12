@@ -9,6 +9,7 @@ import logging
 import re
 from pathlib import Path
 from core.path_cache_manager import path_cache_manager
+from core.token_manager import get_token_manager
 
 logger = logging.getLogger("HMML")
 
@@ -32,6 +33,73 @@ def create_error_response(status: int, message: str) -> dict:
         "message": message,
         "time": int(time.time() * 1000)
     }
+
+
+@router.post("/verifyToken", summary="验证访问Token")
+async def verify_token(payload: dict):
+    """验证客户端提交的 token 是否与服务器存储一致"""
+    try:
+        user_token = (payload or {}).get("token")
+        if not isinstance(user_token, str) or not user_token:
+            return {
+                "status": 401,
+                "message": "验证失败",
+                "data": {"valid": False},
+                "time": int(time.time() * 1000)
+            }
+        tm = get_token_manager()
+        tm.initialize()  # 确保已加载
+        ok = tm.verify_token(user_token)
+        if ok:
+            return {
+                "status": 200,
+                "message": "验证成功",
+                "data": {"valid": True},
+                "time": int(time.time() * 1000)
+            }
+        else:
+            return {
+                "status": 401,
+                "message": "验证失败",
+                "data": {"valid": False},
+                "time": int(time.time() * 1000)
+            }
+    except Exception as error:
+        logger.error(f"Token验证异常: {error}")
+        raise HTTPException(status_code=500, detail=create_error_response(500, "验证异常"))
+
+
+@router.post("/regenerateToken", summary="重新生成访问Token (一次性显示)")
+async def regenerate_token(payload: dict = None):
+    """重新生成 Token 并一次性返回新明文。应只在受控环境调用。"""
+    try:
+        tm = get_token_manager()
+        new_token = tm.regenerate()
+        return {
+            "status": 200,
+            "message": "再生成功",
+            "data": {"token": new_token},  # 仅本次返回
+            "time": int(time.time() * 1000)
+        }
+    except Exception as error:
+        logger.error(f"Token再生失败: {error}")
+        raise HTTPException(status_code=500, detail=create_error_response(500, "再生失败"))
+
+
+@router.get("/tokenAudit", summary="获取Token验证审计统计")
+async def token_audit():
+    try:
+        tm = get_token_manager()
+        stats = tm.get_audit_stats()
+        return {
+            "status": 200,
+            "message": "获取成功",
+            "data": stats,
+            "time": int(time.time() * 1000)
+        }
+    except Exception as error:
+        logger.error(f"获取Token审计失败: {error}")
+        raise HTTPException(status_code=500, detail=create_error_response(500, "获取失败"))
 
 
 def is_onekey_environment() -> bool:

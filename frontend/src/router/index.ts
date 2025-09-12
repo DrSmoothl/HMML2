@@ -168,10 +168,6 @@ const router = createRouter({
   }
 })
 
-// 路由守卫
-router.beforeEach((_to, _from, next) => {
-  // 这里可以添加路由守卫逻辑，比如权限检查
-  next()
-})
+// Token 校验改为全局模态，不再使用基于 /token 路由的守卫
 
 export default router

@@ -87,6 +87,13 @@ class Application:
             await self.http_server.init()
             
             logger.info('应用初始化完成')
+            # 初始化访问 Token （放在最后，确保 config 目录存在）
+            try:
+                from core.token_manager import get_token_manager
+                get_token_manager().initialize()
+                logger.info('访问Token初始化完成')
+            except Exception as error:
+                logger.warn(f'Token初始化失败: {error}')
             
         except Exception as error:
             logger.fatal(f'应用初始化失败: {error}')
