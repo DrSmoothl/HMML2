@@ -331,94 +331,90 @@ class PathCacheManager:
             raise RuntimeError('路径缓存管理器未初始化，请先调用 initialize()')
     
     async def _auto_configure_onekey_environment(self) -> None:
-        """自动配置一键包环境"""
+        """自动配置一键包环境 (兼容多种目录结构)"""
         try:
-            # 检测是否为一键包环境
             if not self._is_onekey_environment():
                 logger.info('当前不在一键包环境中运行，跳过自动配置')
                 logger.info('请使用前端界面手动配置麦麦根目录和适配器根目录')
                 return
-            
+
             logger.info('检测到一键包环境，开始自动配置路径')
-            
-            # 获取当前后端目录的绝对路径
-            current_dir = Path(__file__).resolve().parent.parent.parent.parent  # 回到HMMLBackend目录
-            onekey_root = current_dir.parent.parent  # 回到MaiBotOneKey目录
-            
-            # 构建目标路径
-            maibot_root = onekey_root / "modules" / "MaiBot"
-            qq_adapter_root = onekey_root / "modules" / "MaiBot-NapCat-Adapter"
-            
-            # 检查目标目录是否存在
+
+            file_path = Path(__file__).resolve()
+            modules_dir = None
+            onekey_root = None
+            for ancestor in file_path.parents:
+                if ancestor.name == 'modules' and ancestor.parent.name == 'MaiBotOneKey':
+                    modules_dir = ancestor
+                    onekey_root = ancestor.parent
+                    break
+
+            if not modules_dir or not onekey_root:
+                logger.warning('未找到 modules/MaiBotOneKey 结构，放弃自动配置')
+                return
+
+            maibot_root = modules_dir / 'MaiBot'
+            qq_adapter_root = modules_dir / 'MaiBot-NapCat-Adapter'
+
             if not maibot_root.exists():
                 logger.warning(f'麦麦根目录不存在: {maibot_root}')
                 return
-            
             if not qq_adapter_root.exists():
                 logger.warning(f'QQ适配器根目录不存在: {qq_adapter_root}')
                 return
-            
-            # 设置麦麦根目录
+
             if not self.cache_data.main_root:
                 self.cache_data.main_root = str(maibot_root)
                 logger.info(f'已自动设置麦麦根目录: {maibot_root}')
             else:
                 logger.debug(f'麦麦根目录已存在，跳过设置: {self.cache_data.main_root}')
-            
-            # 检查QQ适配器是否已存在
+
             qq_adapter_exists = any(
-                adapter.adapter_name == "QQ适配器" or adapter.adapter_name == "qq"
-                for adapter in self.cache_data.adapter_roots
+                adapter.adapter_name in ("QQ适配器", "qq") for adapter in self.cache_data.adapter_roots
             )
-            
             if not qq_adapter_exists:
-                # 添加QQ适配器根目录
-                adapter_info = AdapterRootInfo(
-                    adapter_name="QQ适配器",
-                    root_path=str(qq_adapter_root)
+                self.cache_data.adapter_roots.append(
+                    AdapterRootInfo(adapter_name='QQ适配器', root_path=str(qq_adapter_root))
                 )
-                self.cache_data.adapter_roots.append(adapter_info)
                 logger.info(f'已自动添加QQ适配器根目录: {qq_adapter_root}')
             else:
                 logger.debug('QQ适配器根目录已存在，跳过添加')
-            
-            # 保存配置
+
             await self.save_cache()
             logger.info('一键包环境自动配置完成')
-            
         except Exception as error:
             logger.error(f'一键包环境自动配置失败: {error}')
-            # 不抛出异常，允许继续正常使用
     
     def _is_onekey_environment(self) -> bool:
-        """检测是否为一键包环境"""
+        """检测是否为一键包环境 (严格 modules/HMML2Backend 结构)"""
         try:
-            # 获取当前后端目录的绝对路径
-            current_dir = Path(__file__).resolve().parent.parent.parent.parent  # 回到HMMLBackend目录
-            
-            # 检查当前后端是否在一键包的标准路径中运行
-            # 标准路径应该是: MaiBotOneKey/modules/HMMLBackend
-            parent_dir = current_dir.parent  # 应该是modules目录
-            grandparent_dir = parent_dir.parent  # 应该是MaiBotOneKey目录
-            
-            # 检查目录名称和结构是否符合一键包标准
-            is_onekey = (
-                current_dir.name == "HMMLBackend" and
-                parent_dir.name == "modules" and
-                grandparent_dir.name == "MaiBotOneKey" and
-                (grandparent_dir / "modules").exists() and
-                (grandparent_dir / "modules" / "MaiBot").exists()
-            )
-            
-            if is_onekey:
-                logger.info(f'检测到一键包环境，后端路径: {current_dir}')
-                logger.info(f'一键包根目录: {grandparent_dir}')
-            else:
-                logger.info(f'当前运行在开发环境，后端路径: {current_dir}')
-                logger.info('未检测到一键包环境，将使用前端手动配置根目录')
-            
-            return is_onekey
-            
+            file_path = Path(__file__).resolve()
+            # 期望层级: HMML2Backend/backend/src/core/path_cache_manager.py
+            core_dir = file_path.parent
+            src_dir = core_dir.parent
+            backend_dir = src_dir.parent
+            hmml2backend_dir = backend_dir.parent
+            modules_dir = hmml2backend_dir.parent
+
+            if not (
+                core_dir.name == 'core' and
+                src_dir.name == 'src' and
+                backend_dir.name == 'backend' and
+                hmml2backend_dir.name == 'HMML2Backend' and
+                modules_dir.name == 'modules'
+            ):
+                logger.info('未检测到一键包结构 (目录层级不匹配)')
+                return False
+
+            if not (modules_dir / 'HMML2Backend').exists():
+                logger.info('modules 下缺少 HMML2Backend 目录')
+                return False
+            if not (modules_dir / 'MaiBot').exists():
+                logger.info('modules 下缺少 MaiBot 目录')
+                return False
+
+            logger.info(f'检测到一键包环境，HMML2Backend 目录: {hmml2backend_dir}')
+            return True
         except Exception as error:
             logger.debug(f'一键包环境检测失败: {error}')
             return False
