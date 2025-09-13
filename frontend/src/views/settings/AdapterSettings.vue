@@ -10,15 +10,6 @@
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <button 
-              class="btn btn-outline btn-sm"
-              @click="testConnection"
-              :disabled="loading"
-            >
-              <Icon v-if="!testing" icon="mdi:wifi" class="w-4 h-4" />
-              <span v-else class="loading loading-spinner loading-xs"></span>
-              {{ testing ? '测试中...' : '测试连接' }}
-            </button>
-            <button 
               class="btn btn-success btn-sm"
               @click="loadConfig"
               :disabled="loading"
@@ -88,6 +79,20 @@
                         placeholder="8095"
                       />
                     </div>
+                  </div>
+
+                  <div class="form-control">
+                    <div class="flex items-center gap-4 mb-2">
+                      <span class="label-text font-medium w-24 shrink-0">访问令牌</span>
+                      <input 
+                        type="text" 
+                        class="input input-bordered input-sm flex-1"
+                        v-model="config.napcat_server.token"
+                        @input="markAsChanged"
+                        placeholder="可留空"
+                      />
+                    </div>
+                    <div class="text-xs text-base-content/60 ml-28">与 Napcat 设置的 token 一致，留空表示无需验证</div>
                   </div>
 
                   <div class="form-control">
@@ -545,6 +550,7 @@ interface AdapterConfig {
     host: string
     port: number
     heartbeat_interval: number
+  token?: string
   }
   maibot_server: {
     host: string
@@ -576,7 +582,8 @@ const config = reactive<AdapterConfig>({
   napcat_server: {
     host: "localhost",
     port: 8095,
-    heartbeat_interval: 30
+  heartbeat_interval: 30,
+  token: ""
   },
   maibot_server: {
     host: "localhost",
@@ -600,7 +607,7 @@ const config = reactive<AdapterConfig>({
 })
 
 const loading = ref(false)
-const testing = ref(false)
+// 已移除测试连接功能
 const hasChanges = ref(false)
 
 // 临时输入数据
@@ -726,40 +733,6 @@ const saveConfig = async () => {
   }
 }
 
-const testConnection = async () => {
-  try {
-    testing.value = true
-    
-    // 使用配置文件信息API作为连接测试的替代方案
-    const response = await api.get('/config/adapter/qq/info')
-    
-    if (response.data.status === 200) {
-      const fileInfo = response.data.data
-      if (fileInfo.exists && fileInfo.readable && fileInfo.writable) {
-        showMessage('success', '连接测试成功 - 配置文件可正常访问')
-      } else if (!fileInfo.exists) {
-        showMessage('error', '连接测试失败 - 配置文件不存在')
-      } else if (!fileInfo.readable) {
-        showMessage('error', '连接测试失败 - 配置文件不可读')
-      } else if (!fileInfo.writable) {
-        showMessage('error', '连接测试失败 - 配置文件不可写')
-      } else {
-        showMessage('warning', '连接测试部分成功 - 配置文件存在但可能有权限问题')
-      }
-    } else {
-      throw new Error(response.data.message || '连接测试失败')
-    }
-  } catch (error) {
-    console.error('Test connection error:', error)
-    if (error instanceof Error && error.message.includes('QQ适配器根目录未设置')) {
-      showMessage('error', '连接测试失败 - 请先在路径缓存中设置QQ适配器根目录')
-    } else {
-      showMessage('error', '连接测试失败: ' + (error instanceof Error ? error.message : String(error)))
-    }
-  } finally {
-    testing.value = false
-  }
-}
 
 // 群组管理方法
 const addGroupId = () => {
