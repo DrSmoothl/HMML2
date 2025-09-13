@@ -103,21 +103,15 @@ async def token_audit():
 
 
 def is_onekey_environment() -> bool:
-    """检测是否为一键包环境 (严格结构)
+    """检测是否为一键包环境 (放宽后)
 
-    必须满足：*/MaiBotOneKey/modules/HMML2Backend/backend/src/routes/system.py
-    关键节点：
-    - parent chain 中存在 modules，且其父目录名任意（允许自定义一键包根，不再强制 MaiBotOneKey 名）
-    - modules 下存在 HMML2Backend 目录
-    - 当前文件位于 HMML2Backend/backend/src/routes/
-    - modules 下存在 MaiBot (用于确认打包完整性)
+    要求目录链: */modules/HMML2Backend/backend/src/routes/system.py
+    不再强制要求 modules 下存在 MaiBot 目录（允许后续再放置或裁剪）。
+    仅通过层级与关键目录名判定。
     """
     try:
-        file_path = Path(__file__).resolve()
-
-        # 定位 backend/src/routes/system.py 的 backend 根目录
-        # 期望层级: HMML2Backend / backend / src / routes / system.py
-        routes_dir = file_path.parent
+        fp = Path(__file__).resolve()
+        routes_dir = fp.parent
         src_dir = routes_dir.parent
         backend_dir = src_dir.parent
         hmml2backend_dir = backend_dir.parent
@@ -132,15 +126,12 @@ def is_onekey_environment() -> bool:
         ):
             return False
 
-        # 校验 modules 下存在 HMML2Backend 和 MaiBot
+        # 至少确认 HMML2Backend 目录真实存在
         if not (modules_dir / 'HMML2Backend').exists():
             return False
-        if not (modules_dir / 'MaiBot').exists():
-            return False
-
         return True
-    except Exception as error:
-        logger.debug(f'一键包环境检测失败: {error}')
+    except Exception as e:
+        logger.debug(f'一键包环境检测失败: {e}')
         return False
 
 

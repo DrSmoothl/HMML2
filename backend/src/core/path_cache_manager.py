@@ -386,11 +386,10 @@ class PathCacheManager:
             logger.error(f'一键包环境自动配置失败: {error}')
     
     def _is_onekey_environment(self) -> bool:
-        """检测是否为一键包环境 (严格 modules/HMML2Backend 结构)"""
+        """检测是否为一键包环境 (放宽: 不要求 MaiBot 目录)"""
         try:
-            file_path = Path(__file__).resolve()
-            # 期望层级: HMML2Backend/backend/src/core/path_cache_manager.py
-            core_dir = file_path.parent
+            fp = Path(__file__).resolve()
+            core_dir = fp.parent
             src_dir = core_dir.parent
             backend_dir = src_dir.parent
             hmml2backend_dir = backend_dir.parent
@@ -403,20 +402,13 @@ class PathCacheManager:
                 hmml2backend_dir.name == 'HMML2Backend' and
                 modules_dir.name == 'modules'
             ):
-                logger.info('未检测到一键包结构 (目录层级不匹配)')
                 return False
 
             if not (modules_dir / 'HMML2Backend').exists():
-                logger.info('modules 下缺少 HMML2Backend 目录')
                 return False
-            if not (modules_dir / 'MaiBot').exists():
-                logger.info('modules 下缺少 MaiBot 目录')
-                return False
-
-            logger.info(f'检测到一键包环境，HMML2Backend 目录: {hmml2backend_dir}')
             return True
-        except Exception as error:
-            logger.debug(f'一键包环境检测失败: {error}')
+        except Exception as e:
+            logger.debug(f'一键包环境检测失败: {e}')
             return False
 
 
