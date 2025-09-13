@@ -242,26 +242,6 @@
           </div>
         </div>
 
-        <!-- Memory Configuration -->
-        <div class="bg-base-100 rounded-xl shadow-sm">
-          <div class="p-6 border-b border-base-300">
-            <h2 class="text-xl font-semibold text-base-content flex items-center gap-2">
-              <Icon icon="mdi:brain" class="w-6 h-6" />
-              {{ getConfigLabel('memory') }}
-            </h2>
-            <p class="text-base-content/70 text-sm mt-1">记忆系统配置</p>
-          </div>
-          <div class="p-6 space-y-6">
-            <div v-for="(value, key) in config.memory" :key="key" class="form-control">
-              <ConfigItem 
-                :label="getConfigLabel(`memory.${key}`)" 
-                :value="value" 
-                :path="`memory.${key}`"
-                @update="updateConfig"
-              />
-            </div>
-          </div>
-        </div>
 
         <!-- Voice Configuration -->
         <div class="bg-base-100 rounded-xl shadow-sm">
@@ -315,37 +295,15 @@
             <p class="text-base-content/70 text-sm mt-1">关键词反应配置</p>
           </div>
           <div class="p-6 space-y-6">
-            <div v-for="(value, key) in config.keyword_reaction" :key="key" class="form-control">
-              <ConfigItem 
-                :label="getConfigLabel(`keyword_reaction.${key}`)" 
-                :value="value" 
-                :path="`keyword_reaction.${key}`"
-                @update="updateConfig"
-              />
-            </div>
+            <ConfigItem 
+              :label="getConfigLabel('keyword_reaction')" 
+              :value="config.keyword_reaction" 
+              path="keyword_reaction"
+              @update="updateConfig"
+            />
           </div>
         </div>
 
-        <!-- Custom Prompt Configuration -->
-        <div class="bg-base-100 rounded-xl shadow-sm">
-          <div class="p-6 border-b border-base-300">
-            <h2 class="text-xl font-semibold text-base-content flex items-center gap-2">
-              <Icon icon="mdi:format-text" class="w-6 h-6" />
-              {{ getConfigLabel('custom_prompt') }}
-            </h2>
-            <p class="text-base-content/70 text-sm mt-1">自定义提示词配置</p>
-          </div>
-          <div class="p-6 space-y-6">
-            <div v-for="(value, key) in config.custom_prompt" :key="key" class="form-control">
-              <ConfigItem 
-                :label="getConfigLabel(`custom_prompt.${key}`)" 
-                :value="value" 
-                :path="`custom_prompt.${key}`"
-                @update="updateConfig"
-              />
-            </div>
-          </div>
-        </div>
 
         <!-- Response Post Process Configuration -->
         <div class="bg-base-100 rounded-xl shadow-sm">
@@ -554,14 +512,10 @@ const configLabels: Record<string, string> = {
   
   // 聊天配置
   'chat': '聊天设置',
-  'chat.talk_frequency': '活跃度',
-  'chat.focus_value': '专注度',
+  'chat.talk_value': '活跃度',
   'chat.max_context_size': '上下文长度',
   'chat.mentioned_bot_reply': '提及回复概率增幅',
-  'chat.at_bot_inevitable_reply': 'At回复概率增幅',
-  'chat.planner_size': '副规划器大小',
-  'chat.focus_value_adjust': '专注度时间段调整',
-  'chat.talk_frequency_adjust': '活跃度时间段调整',
+  // 已移除: focus_value / talk_frequency / at_bot_inevitable_reply / planner_size / focus_value_adjust / talk_frequency_adjust
   
   // 关系配置
   'relationship': '关系系统',
@@ -591,13 +545,6 @@ const configLabels: Record<string, string> = {
   'emoji.content_filtration': '内容过滤',
   'emoji.filtration_prompt': '过滤要求',
   
-  // 记忆配置
-  'memory': '记忆系统',
-  'memory.enable_memory': '启用记忆系统',
-  'memory.forget_memory_interval': '记忆遗忘间隔（秒）',
-  'memory.memory_forget_time': '遗忘时间（小时）',
-  'memory.memory_forget_percentage': '记忆遗忘比例',
-  'memory.memory_ban_words': '记忆禁用词',
   
   // 语音配置
   'voice': '语音识别',
@@ -623,9 +570,6 @@ const configLabels: Record<string, string> = {
   'keyword_reaction.keyword_rules': '关键词规则',
   'keyword_reaction.regex_rules': '正则规则',
   
-  // 自定义提示词配置
-  'custom_prompt': '自定义提示词',
-  'custom_prompt.image_prompt': '图片提示词',
   
   // 回复后处理配置
   'response_post_process': '回复后处理',

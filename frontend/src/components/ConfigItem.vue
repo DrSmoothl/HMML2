@@ -148,13 +148,7 @@
       </div>
     </div>
 
-    <!-- 聊天流调整配置 -->
-    <ChatFlowAdjustConfig
-      v-else-if="configType === 'chatflow_adjust'"
-      :label="label"
-      :value="value"
-      @update="(newValue) => emit('update', props.path, newValue)"
-    />
+  <!-- (已移除 chatflow_adjust 配置类型) -->
 
     <!-- 表达学习配置 -->
     <ExpressionLearningConfig
@@ -310,7 +304,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import ChatFlowAdjustConfig from './ChatFlowAdjustConfig.vue'
 import ExpressionLearningConfig from './ExpressionLearningConfig.vue'
 import ExpressionGroupsConfig from './ExpressionGroupsConfig.vue'
 // import MemoryDistributionConfig from './MemoryDistributionConfig.vue' // 已移除
@@ -340,9 +333,7 @@ const configType = computed(() => {
   const path = props.path.toLowerCase()
   
   // 检查是否为聊天流调整配置
-  if (path.includes('focus_value_adjust') || path.includes('talk_frequency_adjust')) {
-    return 'chatflow_adjust'
-  }
+  // 已移除 focus_value_adjust / talk_frequency_adjust 相关配置
   
   // 检查是否为表达学习配置
   if (path.includes('learning_list')) {

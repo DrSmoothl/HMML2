@@ -6,20 +6,21 @@
     
     <div class="space-y-4">
       <!-- 关键词规则 -->
-      <div class="bg-base-200 rounded-lg p-4">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
+      <div class="bg-base-200 rounded-lg p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div class="flex items-center gap-2 min-w-[220px]">
             <Icon icon="mdi:key" class="w-5 h-5 text-primary" />
             <span class="text-sm font-semibold">关键词规则</span>
-            <span class="badge badge-info">{{ keywordRules.length }} 条规则</span>
+            <span class="badge badge-info">{{ keywordRules.length }} 条</span>
           </div>
-          <button 
-            class="btn btn-primary btn-sm"
-            @click="addKeywordRule"
-          >
-            <Icon icon="mdi:plus" class="w-4 h-4" />
-            添加规则
-          </button>
+          <div class="flex items-center gap-2">
+            <button 
+              class="btn btn-primary btn-sm"
+              @click="addKeywordRule"
+            >
+              <Icon icon="mdi:plus" class="w-4 h-4" />新增
+            </button>
+          </div>
         </div>
         
         <div class="space-y-3">
@@ -39,11 +40,11 @@
             </div>
             
             <!-- 关键词列表 -->
-            <div class="form-control mb-2">
-              <label class="label py-1">
-                <span class="label-text text-xs">触发关键词</span>
+            <div class="form-control mb-3">
+              <label class="label py-1 block">
+                <span class="label-text text-xs font-medium mb-1">触发关键词</span>
               </label>
-              <div class="flex flex-wrap gap-1 mb-2">
+              <div class="flex flex-wrap gap-1 mb-2 min-h-[2rem]">
                 <div 
                   v-for="(keyword, kwIndex) in rule.keywords" 
                   :key="kwIndex"
@@ -58,12 +59,12 @@
                   </button>
                 </div>
               </div>
-              <div class="join">
+              <div class="join w-full max-w-xl">
                 <input 
                   v-model="newKeywords[index]"
                   type="text" 
                   class="input input-bordered input-sm join-item flex-1"
-                  placeholder="输入关键词后按回车"
+                  placeholder="输入关键词后回车（可多次）"
                   @keyup.enter="addKeyword(index)"
                 />
                 <button 
@@ -78,11 +79,11 @@
             
             <!-- 回复内容 -->
             <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs">回复内容</span>
+              <label class="label py-1 block">
+                <span class="label-text text-xs font-medium mb-1">回复内容</span>
               </label>
               <textarea 
-                class="textarea textarea-bordered textarea-sm"
+                class="textarea textarea-bordered textarea-sm leading-relaxed w-full"
                 :value="rule.reaction"
                 @input="updateReaction(index, ($event.target as HTMLTextAreaElement).value)"
                 placeholder="输入触发关键词时的回复内容"
@@ -99,20 +100,21 @@
       </div>
 
       <!-- 正则规则 -->
-      <div class="bg-base-200 rounded-lg p-4">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
+      <div class="bg-base-200 rounded-lg p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div class="flex items-center gap-2 min-w-[220px]">
             <Icon icon="mdi:regex" class="w-5 h-5 text-secondary" />
             <span class="text-sm font-semibold">正则规则</span>
-            <span class="badge badge-info">{{ regexRules.length }} 条规则</span>
+            <span class="badge badge-info">{{ regexRules.length }} 条</span>
           </div>
-          <button 
-            class="btn btn-secondary btn-sm"
-            @click="addRegexRule"
-          >
-            <Icon icon="mdi:plus" class="w-4 h-4" />
-            添加规则
-          </button>
+          <div class="flex items-center gap-2">
+            <button 
+              class="btn btn-secondary btn-sm"
+              @click="addRegexRule"
+            >
+              <Icon icon="mdi:plus" class="w-4 h-4" />新增
+            </button>
+          </div>
         </div>
         
         <div class="space-y-3">
@@ -132,11 +134,11 @@
             </div>
             
             <!-- 正则表达式列表 -->
-            <div class="form-control mb-2">
-              <label class="label py-1">
-                <span class="label-text text-xs">正则表达式</span>
+            <div class="form-control mb-3">
+              <label class="label py-1 block">
+                <span class="label-text text-xs font-medium mb-1">正则表达式</span>
               </label>
-              <div class="flex flex-wrap gap-1 mb-2">
+              <div class="flex flex-wrap gap-1 mb-2 min-h-[2rem]">
                 <div 
                   v-for="(regex, regIndex) in rule.regex" 
                   :key="regIndex"
@@ -151,12 +153,12 @@
                   </button>
                 </div>
               </div>
-              <div class="join">
+              <div class="join w-full max-w-xl">
                 <input 
                   v-model="newRegexes[index]"
                   type="text" 
                   class="input input-bordered input-sm join-item flex-1 font-mono"
-                  placeholder="输入正则表达式后按回车"
+                  placeholder="输入正则后回车（可多条）"
                   @keyup.enter="addRegex(index)"
                 />
                 <button 
@@ -171,11 +173,11 @@
             
             <!-- 回复内容 -->
             <div class="form-control">
-              <label class="label py-1">
-                <span class="label-text text-xs">回复内容</span>
+              <label class="label py-1 block">
+                <span class="label-text text-xs font-medium mb-1">回复内容</span>
               </label>
               <textarea 
-                class="textarea textarea-bordered textarea-sm"
+                class="textarea textarea-bordered textarea-sm leading-relaxed w-full"
                 :value="rule.reaction"
                 @input="updateRegexReaction(index, ($event.target as HTMLTextAreaElement).value)"
                 placeholder="输入匹配正则时的回复内容"

@@ -909,11 +909,48 @@ const loadConfig = async () => {
       // 自动获取所有提供商的模型列表
       await loadAllModelsFromProviders()
     }
+
+    // 确保新增的 planner_small 任务配置存在并设置默认值
+    ensurePlannerSmallDefaults()
   } catch (error) {
     showMessage('error', '加载配置失败')
     console.error('Load config error:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// 如果后端还未提供 planner_small，则在前端注入默认配置
+const ensurePlannerSmallDefaults = () => {
+  if (!config.value) return
+  // 如果 model_task_config 不存在，先初始化一个对象以防空引用
+  if (!config.value.model_task_config) {
+    // @ts-ignore: 动态补全后端缺失结构
+    config.value.model_task_config = {} as any
+  }
+  const mtc: any = config.value.model_task_config
+  if (!mtc.planner_small) {
+    mtc.planner_small = {
+      model_list: ['qwen3-30b'],
+      temperature: 0.3,
+      max_tokens: 800
+    }
+    // 标记为有修改，提示用户保存以写回后端
+    markAsChanged()
+  } else {
+    // 若已存在但缺少字段，进行补全（不覆盖用户已有值）
+    if (!Array.isArray(mtc.planner_small.model_list)) {
+      mtc.planner_small.model_list = ['qwen3-30b']
+      markAsChanged()
+    }
+    if (mtc.planner_small.temperature === undefined) {
+      mtc.planner_small.temperature = 0.3
+      markAsChanged()
+    }
+    if (mtc.planner_small.max_tokens === undefined) {
+      mtc.planner_small.max_tokens = 800
+      markAsChanged()
+    }
   }
 }
 

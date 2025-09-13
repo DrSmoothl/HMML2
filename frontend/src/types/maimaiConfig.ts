@@ -27,14 +27,9 @@ export interface RelationshipConfig {
 }
 
 export interface ChatConfig {
-  focus_value: number
-  max_context_size: number
+  talk_value: number
   mentioned_bot_reply: number
-  at_bot_inevitable_reply: boolean
-  talk_frequency: number
-  planner_size: number
-  focus_value_adjust: string[][]
-  talk_frequency_adjust: string[][]
+  max_context_size: number
 }
 
 export interface MessageReceiveConfig {
@@ -61,13 +56,6 @@ export interface EmojiConfig {
   filtration_prompt: string
 }
 
-export interface MemoryConfig {
-  enable_memory: boolean
-  forget_memory_interval: number
-  memory_forget_time: number
-  memory_forget_percentage: number
-  memory_ban_words: string[]
-}
 
 export interface VoiceConfig {
   enable_asr: boolean
@@ -94,16 +82,13 @@ export interface LpmmKnowledgeConfig {
 }
 
 export interface KeywordReactionRule {
-  name: string
   keywords: string[]
-  reactions: string[]
-  probability: number
-  match_type: string
+  reaction: string
 }
 
 export interface KeywordReactionConfig {
-  enable: boolean
-  rules: KeywordReactionRule[]
+  keyword_rules?: KeywordReactionRule[]
+  regex_rules?: { regex: string[]; reaction: string }[]
 }
 
 export interface PromptVariable {
@@ -188,7 +173,6 @@ export interface MaimaiConfig {
   normal_chat: NormalChatConfig
   tool: ToolConfig
   emoji: EmojiConfig
-  memory: MemoryConfig
   voice: VoiceConfig
   mood: MoodConfig
   lpmm_knowledge: LpmmKnowledgeConfig
