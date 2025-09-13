@@ -391,24 +391,36 @@ class PathCacheManager:
             fp = Path(__file__).resolve()
             core_dir = fp.parent
             src_dir = core_dir.parent
-            backend_dir = src_dir.parent
-            hmml2backend_dir = backend_dir.parent
-            modules_dir = hmml2backend_dir.parent
+            parent_dir = src_dir.parent  # backend 或 HMML2Backend
+            variant = None
 
-            if not (
-                core_dir.name == 'core' and
-                src_dir.name == 'src' and
-                backend_dir.name == 'backend' and
-                hmml2backend_dir.name == 'HMML2Backend' and
-                modules_dir.name == 'modules'
-            ):
+            # 变体 A: modules / HMML2Backend / backend / src / core
+            if parent_dir.name == 'backend' and parent_dir.parent.name == 'HMML2Backend':
+                hmml2backend_dir = parent_dir.parent
+                modules_dir = hmml2backend_dir.parent
+                variant = 'A-with-backend'
+            # 变体 B: modules / HMML2Backend / src / core
+            elif parent_dir.name == 'HMML2Backend' and parent_dir.parent.name == 'modules':
+                hmml2backend_dir = parent_dir
+                modules_dir = parent_dir.parent
+                variant = 'B-no-backend'
+            else:
+                logger.debug('[OneKeyCheck][core] 未匹配结构 parent=%s pparent=%s', parent_dir.name, parent_dir.parent.name if parent_dir.parent else None)
                 return False
 
+            logger.info('[OneKeyCheck][core] variant=%s fp=%s', variant, fp)
+            logger.info('[OneKeyCheck][core] core=%s src=%s hmml2=%s modules=%s',
+                         core_dir.name, src_dir.name, hmml2backend_dir.name, modules_dir.name)
+
+            if core_dir.name != 'core' or src_dir.name != 'src':
+                return False
+            if hmml2backend_dir.name != 'HMML2Backend' or modules_dir.name != 'modules':
+                return False
             if not (modules_dir / 'HMML2Backend').exists():
                 return False
             return True
         except Exception as e:
-            logger.debug(f'一键包环境检测失败: {e}')
+            logger.info(f'[OneKeyCheck][core] 检测异常: {e}')
             return False
 
 
