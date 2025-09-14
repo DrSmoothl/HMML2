@@ -6,3 +6,4 @@ data/
 config/
 __pycache__/
 *.pyc
+venv/
