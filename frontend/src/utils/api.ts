@@ -1,35 +1,41 @@
 import axios from 'axios'
 import type { ApiResponse, ApiError } from '@/types/api'
 
-// 创建 axios 实例
+// 动态解析 API 基础地址
+function resolveBaseURL(): string {
+  const runtime = (window as any).__HMML_API_BASE__
+  if (typeof runtime === 'string' && runtime.trim()) {
+    return runtime.trim()
+  }
+  const envVar = import.meta.env.VITE_API_BASE_URL as string | undefined
+  if (envVar && envVar.trim()) {
+    return envVar.trim()
+  }
+  try {
+    const host = window.location.hostname
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+      return 'http://hmml-backend:7999/api'
+    }
+  } catch (_) { /* ignore */ }
+  return 'http://localhost:7999/api'
+}
+
+const apiBaseURL = resolveBaseURL()
+
 const api = axios.create({
-  baseURL: 'http://localhost:7999/api',
+  baseURL: apiBaseURL,
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 })
 
-// 请求拦截器
 api.interceptors.request.use(
-  (config) => {
-    // 这里可以添加认证 token
-    // const token = localStorage.getItem('token')
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (config) => config,
+  (error) => Promise.reject(error)
 )
 
-// 响应拦截器
 api.interceptors.response.use(
   (response) => {
     const data = response.data as ApiResponse
-    // 根据HMML API文档，成功状态码是200
     if (data.status === 200) {
       return response
     } else {
@@ -51,4 +57,5 @@ api.interceptors.response.use(
   }
 )
 
+export { apiBaseURL }
 export default api

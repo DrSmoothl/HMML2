@@ -20,6 +20,8 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        API_BASE: http://hmml-backend:7999/api
     container_name: hmml-frontend
     depends_on:
       - backend
