@@ -1,0 +1,127 @@
+name: Build & (Optional) Push Docker Images
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      push_images:
+        description: 'Push images to Docker Registry (true/false)'
+        default: 'false'
+        required: false
+      tag_override:
+        description: 'Manual version tag override (e.g. 1.2.3)'
+        required: false
+
+env:
+  REGISTRY: docker.io
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/hmml-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/hmml-frontend
+  PY_VERSION_FILE: backend/version.json
+  FRONT_VERSION_FILE: frontend/package.json
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Read backend version
+        id: backver
+        run: |
+          if [ -f "${PY_VERSION_FILE}" ]; then
+            VER=$(jq -r '.version // empty' ${PY_VERSION_FILE} || echo '')
+          else
+            VER=""
+          fi
+          echo "version=$VER" >> $GITHUB_OUTPUT
+
+      - name: Read frontend version
+        id: frontver
+        run: |
+          if [ -f "${FRONT_VERSION_FILE}" ]; then
+            VER=$(jq -r '.version // empty' ${FRONT_VERSION_FILE} || echo '')
+          else
+            VER=""
+          fi
+          echo "version=$VER" >> $GITHUB_OUTPUT
+
+      - name: Determine build tag
+        id: tag
+        run: |
+          # priority: manual override > backend version > frontend version > short sha
+          OVR='${{ github.event.inputs.tag_override }}'
+          BACK='${{ steps.backver.outputs.version }}'
+          FRONT='${{ steps.frontver.outputs.version }}'
+          if [ ! -z "$OVR" ]; then CHOSEN=$OVR; 
+          elif [ ! -z "$BACK" ]; then CHOSEN=$BACK; 
+          elif [ ! -z "$FRONT" ]; then CHOSEN=$FRONT; 
+          else CHOSEN=${GITHUB_SHA::7}; fi
+          echo "tag=$CHOSEN" >> $GITHUB_OUTPUT
+          echo "Resolved tag=$CHOSEN"
+
+      - name: Login to Docker Hub (only if push)
+        if: github.event_name == 'workflow_dispatch' && inputs.push_images == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Backend Image Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: ${{ github.event_name == 'workflow_dispatch' && inputs.push_images == 'true' }}
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.BACKEND_IMAGE }}:commit-${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Frontend Image Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+            
+          file: frontend/Dockerfile
+          push: ${{ github.event_name == 'workflow_dispatch' && inputs.push_images == 'true' }}
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.FRONTEND_IMAGE }}:commit-${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Tag latest (only when pushing & main & manual dispatch)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.push_images == 'true'
+        run: |
+          docker buildx imagetools create \
+            -t $BACKEND_IMAGE:latest \
+            $BACKEND_IMAGE:${{ steps.tag.outputs.tag }}
+          docker buildx imagetools create \
+            -t $FRONTEND_IMAGE:latest \
+            $FRONTEND_IMAGE:${{ steps.tag.outputs.tag }}
+
+      - name: Summary
+        run: |
+          echo "Backend tag: ${{ steps.tag.outputs.tag }}"
+          echo "Frontend tag: ${{ steps.tag.outputs.tag }}"
+          echo "Pushed? ${{ github.event_name == 'workflow_dispatch' && inputs.push_images == 'true' }}"

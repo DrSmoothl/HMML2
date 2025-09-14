@@ -1,0 +1,40 @@
+# Compose v2 不再需要 version 字段，移除以避免警告
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: hmml-backend
+    ports:
+      - "7999:7999"
+    environment:
+      # 可根据需要添加 ENV 变量
+      PYTHONUNBUFFERED: "1"
+    restart: unless-stopped
+    networks:
+      - hmml-net
+    volumes:
+      - backend-data:/app/data
+      - backend-logs:/app/logs
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: hmml-frontend
+    depends_on:
+      - backend
+    ports:
+      - "7998:7998"
+    environment:
+      # 前端可通过构建时变量注入 API 基础地址，如使用 ARG + ENV
+      # 当前运行阶段仅提供静态文件
+      TZ: Asia/Shanghai
+    restart: unless-stopped
+    networks:
+      - hmml-net
+networks:
+  hmml-net:
+    driver: bridge
+volumes:
+  backend-data:
+  backend-logs:
