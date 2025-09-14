@@ -5,6 +5,9 @@ FROM node:20-alpine AS build
 WORKDIR /app
 ENV CI=true
 
+ARG API_BASE=http://hmml-backend:7999/api
+ENV VITE_API_BASE_URL=$API_BASE
+
 # Enable corepack (pnpm)
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
