@@ -166,11 +166,11 @@ class TokenManager:
         print('重要：访问Token（仅显示一次）')
         print(separator)
         print(f'Token: {token}')
-        print('\n警告：请立即复制并保存此Token！')
+        print('\n     请立即复制并保存此Token！')
         print('   • 此Token仅显示一次，关闭窗口后无法再次查看')
         print('   • 如果丢失，只能通过重新生成来获取新Token')
         print('   • 重新生成会使旧Token失效')
-        print(f'\n{separator}\n')
+        print(f'\n{separator}')
         
         # 非交互模式下自动确认
         if self._non_interactive:
@@ -182,8 +182,8 @@ class TokenManager:
         
         while True:
             try:
-                choice = input("已保存Token？ [Yes] 是  [No] 否: ").strip().lower()
-                if choice in ['y', 'yes', '是', 'shi']:
+                choice = input("请确认是否已保存Token [yes] 已保存  [no] 未保存: ").strip().lower()
+                if choice in ['y', 'yes', 'o', 'ok', '是', 'shi']:
                     print("Token已确认保存，服务继续启动...\n")
                     self._write_audit('TOKEN_DISPLAYED', 'first_show_confirmed')
                     break
@@ -196,7 +196,7 @@ class TokenManager:
                     print("服务继续启动...\n")
                     break
                 else:
-                    print("请输入 Yes 或 No")
+                    print("请输入 yes 或 no")
             except (KeyboardInterrupt, EOFError):
                 print("\n跳过确认，请确保已保存Token！\n")
                 self._write_audit('TOKEN_DISPLAYED', 'first_show_interrupted')
