@@ -128,14 +128,38 @@ class TokenManager:
         self._initialized = True
 
     def _print_first_token(self, token: str):
-        banner = (
-            '\n================= ACCESS TOKEN (SHOW ONCE) =================\n'
-            f'Token: {token}\n'
-            '请立即妥善保存，后续无法再显示，只能重新生成!\n'
-            '==========================================================\n'
-        )
-        print(banner)
-        self._write_audit('TOKEN_DISPLAYED', 'first_show')
+        separator = '=' * 60
+        print(f'\n{separator}')
+        print('重要：访问Token（仅显示一次）')
+        print(separator)
+        print(f'Token: {token}')
+        print('\n警告：请立即复制并保存此Token！')
+        print('   • 此Token仅显示一次，关闭窗口后无法再次查看')
+        print('   • 如果丢失，只能通过重新生成来获取新Token')
+        print('   • 重新生成会使旧Token失效')
+        print(f'\n{separator}\n')
+        
+        while True:
+            try:
+                choice = input("已保存Token？ [O] OK  [N] NO: ").strip().lower()
+                if choice in ['o', 'ok', 'y', 'yes']:
+                    print("Token已确认保存，服务继续启动...\n")
+                    self._write_audit('TOKEN_DISPLAYED', 'first_show_confirmed')
+                    break
+                elif choice in ['n', 'no']:
+                    print("Token未保存，下次启动将重新生成新Token！")
+                    # 删除当前token文件，强制下次重新生成
+                    if TOKEN_FILE_PATH.exists():
+                        TOKEN_FILE_PATH.unlink()
+                    self._write_audit('TOKEN_DISPLAYED', 'first_show_rejected')
+                    print("服务继续启动...\n")
+                    break
+                else:
+                    print("请输入 O 或 N")
+            except (KeyboardInterrupt, EOFError):
+                print("\n跳过确认，请确保已保存Token！\n")
+                self._write_audit('TOKEN_DISPLAYED', 'first_show_interrupted')
+                break
 
     # ---------------- 功能接口 ----------------
     def verify_token(self, user_token: str) -> bool:
