@@ -141,12 +141,12 @@ class TokenManager:
         
         while True:
             try:
-                choice = input("已保存Token？ [O] OK  [N] NO: ").strip().lower()
-                if choice in ['o', 'ok', 'y', 'yes']:
+                choice = input("已保存Token？ [Yes] 是  [No] 否: ").strip().lower()
+                if choice in ['y', 'yes', '是', 'shi']:
                     print("Token已确认保存，服务继续启动...\n")
                     self._write_audit('TOKEN_DISPLAYED', 'first_show_confirmed')
                     break
-                elif choice in ['n', 'no']:
+                elif choice in ['n', 'no', '否', 'fou']:
                     print("Token未保存，下次启动将重新生成新Token！")
                     # 删除当前token文件，强制下次重新生成
                     if TOKEN_FILE_PATH.exists():
@@ -155,7 +155,7 @@ class TokenManager:
                     print("服务继续启动...\n")
                     break
                 else:
-                    print("请输入 O 或 N")
+                    print("请输入 Yes 或 No")
             except (KeyboardInterrupt, EOFError):
                 print("\n跳过确认，请确保已保存Token！\n")
                 self._write_audit('TOKEN_DISPLAYED', 'first_show_interrupted')
