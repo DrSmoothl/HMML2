@@ -4,8 +4,9 @@
 1. 仅存储哈希而非明文 (采用 Argon2id)
 2. 第一次生成时在控制台打印一次明文 Token, 以后不再可见
 3. 运行内存最小暴露: 初始化后仅缓存哈希; 再生(re-generate)时返回新明文一次
-4. 提供一次性“再生+显示”方法, 旧 token 立即失效
+4. 提供一次性"再生+显示"方法, 旧 token 立即失效
 5. 失败/成功验证审计: 统计总尝试/成功/失败/最后一次时间与最近失败窗口
+6. 支持非交互模式，用于自动化部署和CI/CD环境
 
 文件结构:
     config/token.token    -> JSON: {"hash":"<argon2 hash>", "created_at": <ts>, "updated_at": <ts>, "version": 1}
@@ -14,12 +15,15 @@
 说明:
     - 不再读取旧版本格式; 若文件损坏将重新生成新 token 并提示
     - Argon2 参数可后续配置化
+    - 非交互模式通过环境变量或命令行参数控制
 """
 from __future__ import annotations
 import secrets
 import json
 import time
 import re
+import os
+import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 from argon2 import PasswordHasher, exceptions as argon_exc
@@ -58,6 +62,35 @@ class TokenManager:
             'last_attempt_ts': None,
             'recent_failures': []  # timestamps
         }
+        # 检测非交互模式
+        self._non_interactive = self._detect_non_interactive_mode()
+
+    def _detect_non_interactive_mode(self) -> bool:
+        """检测是否在非交互模式下运行"""
+        # 检查环境变量
+        if os.getenv('HMML_NON_INTERACTIVE', '').lower() in ('true', '1', 'yes'):
+            return True
+        if os.getenv('CI', '').lower() in ('true', '1'):
+            return True
+        if os.getenv('GITHUB_ACTIONS', '').lower() in ('true', '1'):
+            return True
+        if os.getenv('JENKINS_URL'):
+            return True
+        if os.getenv('GITLAB_CI', '').lower() in ('true', '1'):
+            return True
+        
+        # 检查命令行参数
+        if '--non-interactive' in sys.argv:
+            return True
+            
+        # 检查标准输入是否可用（Docker、管道等场景）
+        try:
+            if not sys.stdin.isatty():
+                return True
+        except:
+            return True
+            
+        return False
 
     # ---------------- 工具 ----------------
     def _generate_token(self, length: int = _DEFAULT_TOKEN_LENGTH) -> str:
@@ -128,14 +161,46 @@ class TokenManager:
         self._initialized = True
 
     def _print_first_token(self, token: str):
-        banner = (
-            '\n================= ACCESS TOKEN (SHOW ONCE) =================\n'
-            f'Token: {token}\n'
-            '请立即妥善保存，后续无法再显示，只能重新生成!\n'
-            '==========================================================\n'
-        )
-        print(banner)
-        self._write_audit('TOKEN_DISPLAYED', 'first_show')
+        separator = '=' * 60
+        print(f'\n{separator}')
+        print('重要：访问Token（仅显示一次）')
+        print(separator)
+        print(f'Token: {token}')
+        print('\n     请立即复制并保存此Token！')
+        print('   • 此Token仅显示一次，关闭窗口后无法再次查看')
+        print('   • 如果丢失，只能通过重新生成来获取新Token')
+        print('   • 重新生成会使旧Token失效')
+        print(f'\n{separator}')
+        
+        # 非交互模式下自动确认
+        if self._non_interactive:
+            print("检测到非交互模式（CI/CD或自动化部署），自动确认Token已保存")
+            print("请确保在部署脚本中正确处理上述Token信息")
+            print("服务继续启动...\n")
+            self._write_audit('TOKEN_DISPLAYED', 'first_show_auto_confirmed_non_interactive')
+            return
+        
+        while True:
+            try:
+                choice = input("请确认是否已保存Token [yes] 已保存  [no] 未保存: ").strip().lower()
+                if choice in ['y', 'yes', 'o', 'ok', '是', 'shi']:
+                    print("Token已确认保存，服务继续启动...\n")
+                    self._write_audit('TOKEN_DISPLAYED', 'first_show_confirmed')
+                    break
+                elif choice in ['n', 'no', '否', 'fou']:
+                    print("Token未保存，下次启动将重新生成新Token！")
+                    # 删除当前token文件，强制下次重新生成
+                    if TOKEN_FILE_PATH.exists():
+                        TOKEN_FILE_PATH.unlink()
+                    self._write_audit('TOKEN_DISPLAYED', 'first_show_rejected')
+                    print("服务继续启动...\n")
+                    break
+                else:
+                    print("请输入 yes 或 no")
+            except (KeyboardInterrupt, EOFError):
+                print("\n跳过确认，请确保已保存Token！\n")
+                self._write_audit('TOKEN_DISPLAYED', 'first_show_interrupted')
+                break
 
     # ---------------- 功能接口 ----------------
     def verify_token(self, user_token: str) -> bool:
