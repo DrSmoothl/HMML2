@@ -1213,7 +1213,6 @@ const getTemperatureRecommendation = (taskKey: string): string => {
     'planner': '建议 0.3，平衡决策准确性和灵活性',
     'planner_small': '建议 0.3，保持副决策的合理性',
     'utils_small': '建议 0.7，适当增加小模型的创造性',
-    'emotion': '建议 0.7，让情绪变化更自然',
     'tool_use': '建议 0.7，工具调用需要一定灵活性',
     'lpmm_entity_extract': '建议 0.2，确保实体提取准确性',
     'lpmm_rdf_build': '建议 0.2，保证知识图谱构建质量',
@@ -1242,7 +1241,6 @@ const getTaskCardClass = (taskKey: string): string => {
     'replyer': 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800/50',
     'planner': 'bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:border-purple-800/50',
     'planner_small': 'bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800/50',
-    'emotion': 'bg-pink-50 border-pink-200 dark:bg-pink-950/30 dark:border-pink-800/50',
     'vlm': 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800/50',
     'voice': 'bg-teal-50 border-teal-200 dark:bg-teal-950/30 dark:border-teal-800/50',
     'tool_use': 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800/50',
@@ -1261,7 +1259,6 @@ const getTaskIconClass = (taskKey: string): string => {
     'replyer': 'bg-success text-success-content',
     'planner': 'bg-accent text-accent-content',
     'planner_small': 'bg-accent text-accent-content',
-    'emotion': 'bg-warning text-warning-content',
     'vlm': 'bg-info text-info-content',
     'voice': 'bg-primary text-primary-content',
     'tool_use': 'bg-secondary text-secondary-content',
@@ -1280,7 +1277,6 @@ const getTaskIcon = (taskKey: string): string => {
     'replyer': 'mdi:message-reply',
     'planner': 'mdi:brain',
     'planner_small': 'mdi:head-lightbulb',
-    'emotion': 'mdi:emoticon-happy',
     'vlm': 'mdi:image-multiple',
     'voice': 'mdi:microphone',
     'tool_use': 'mdi:hammer-wrench',
@@ -1305,6 +1301,9 @@ const getTaskTypeClass = (taskKey: string): string => {
   if (['vlm', 'voice', 'embedding'].includes(taskKey)) {
     return 'badge-info'
   }
+  if (taskKey === 'tool_use') {
+    return 'badge-accent'
+  }
   return 'badge-accent'
 }
 
@@ -1321,7 +1320,7 @@ const getTaskCategory = (taskKey: string): string => {
   if (['vlm', 'voice', 'embedding'].includes(taskKey)) {
     return '专用模型'
   }
-  if (['emotion', 'tool_use'].includes(taskKey)) {
+  if (taskKey === 'tool_use') {
     return '扩展功能'
   }
   return '其他'

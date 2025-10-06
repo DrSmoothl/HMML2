@@ -127,7 +127,16 @@
           </div>
           <div class="p-6 space-y-6">
             <div v-for="(value, key) in config.chat" :key="key" class="form-control">
-              <ConfigItem 
+              <!-- 使用专用组件处理 talk_value_rules -->
+              <TalkValueRulesConfig
+                v-if="String(key) === 'talk_value_rules'"
+                :label="getConfigLabel(`chat.${key}`)"
+                :value="value"
+                @update="(newValue: any) => updateConfig(`chat.${key}`, newValue)"
+              />
+              <!-- 其他配置项使用 ConfigItem -->
+              <ConfigItem
+                v-else
                 :label="getConfigLabel(`chat.${key}`)" 
                 :value="value" 
                 :path="`chat.${key}`"
@@ -215,6 +224,27 @@
                 :label="getConfigLabel(`mood.${key}`)" 
                 :value="value" 
                 :path="`mood.${key}`"
+                @update="updateConfig"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Memory Configuration -->
+        <div class="bg-base-100 rounded-xl shadow-sm">
+          <div class="p-6 border-b border-base-300">
+            <h2 class="text-xl font-semibold text-base-content flex items-center gap-2">
+              <Icon icon="mdi:brain" class="w-6 h-6" />
+              {{ getConfigLabel('memory') }}
+            </h2>
+            <p class="text-base-content/70 text-sm mt-1">记忆系统配置</p>
+          </div>
+          <div class="p-6 space-y-6">
+            <div v-for="(value, key) in config.memory" :key="key" class="form-control">
+              <ConfigItem 
+                :label="getConfigLabel(`memory.${key}`)" 
+                :value="value" 
+                :path="`memory.${key}`"
                 @update="updateConfig"
               />
             </div>
@@ -482,6 +512,7 @@ import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { MaimaiConfigAPI } from '@/utils/maimaiConfigApi'
 import ConfigItem from '@/components/ConfigItem.vue'
+import TalkValueRulesConfig from '@/components/TalkValueRulesConfig.vue'
 
 // 响应式数据
 const config = ref<any>(null)
@@ -502,20 +533,23 @@ const configLabels: Record<string, string> = {
   'personality': '人格配置',
   'personality.personality': '人格特质与身份特征',
   'personality.reply_style': '回复风格',
-  'personality.emotion_style': '情感特征',
+  'personality.private_plan_style': '私聊说话规则与行为风格',
   'personality.interest': '兴趣爱好',
   
   // 表达配置
   'expression': '表达学习',
+  'expression.mode': '表达方式模式',
   'expression.learning_list': '学习配置列表',
   'expression.expression_groups': '表达分组',
   
   // 聊天配置
   'chat': '聊天设置',
-  'chat.talk_value': '活跃度',
-  'chat.max_context_size': '上下文长度',
+  'chat.talk_value': '聊天频率',
   'chat.mentioned_bot_reply': '提及回复概率增幅',
-  // 已移除: focus_value / talk_frequency / at_bot_inevitable_reply / planner_size / focus_value_adjust / talk_frequency_adjust
+  'chat.max_context_size': '上下文长度',
+  'chat.auto_chat_value': '自动聊天概率',
+  'chat.planner_smooth': '规划器平滑',
+  'chat.talk_value_rules': '动态发言频率规则',
   
   // 关系配置
   'relationship': '关系系统',
@@ -533,7 +567,13 @@ const configLabels: Record<string, string> = {
   // 情绪配置
   'mood': '情绪系统',
   'mood.enable_mood': '启用情绪',
+  'mood.emotion_style': '情感特征',
   'mood.mood_update_threshold': '情绪更新阈值',
+  
+  // 记忆配置
+  'memory': '记忆系统',
+  'memory.max_memory_number': '记忆最大数量',
+  'memory.max_memory_size': '记忆最大大小',
   
   // 表情包配置
   'emoji': '表情包功能',
