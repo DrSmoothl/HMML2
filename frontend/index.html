@@ -9,6 +9,43 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- API Base URL 动态注入脚本 - 支持 Docker 和非 Docker 部署的跨主机访问 -->
+    <script>
+      // 动态设置 API 基础地址，使用当前访问的主机地址
+      (function() {
+        // 如果已经手动设置了 API 地址，则不覆盖
+        if (window.__HMML_API_BASE__) {
+          console.log('[HMML] API Base URL 已手动设置为:', window.__HMML_API_BASE__);
+          return;
+        }
+        
+        // 获取当前页面的协议和主机
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+        
+        // 判断前端端口，推断后端端口
+        let backendPort = '7999'; // 默认后端端口
+        
+        if (port === '5173') {
+          // Vite 开发服务器 (本地源码运行)
+          backendPort = '7999';
+        } else if (port === '7998') {
+          // Docker 部署或生产构建
+          backendPort = '7999';
+        } else if (port === '3000' || port === '8080') {
+          // 其他常见前端端口
+          backendPort = '7999';
+        }
+        
+        // 自动配置 API 基址
+        // 无论是 Docker 部署还是非 Docker 部署，都使用当前访问的主机地址
+        window.__HMML_API_BASE__ = `${protocol}//${hostname}:${backendPort}/api`;
+        
+        console.log('[HMML] API Base URL 自动设置为:', window.__HMML_API_BASE__);
+        console.log('[HMML] 部署模式: ' + (port === '5173' ? '开发模式' : port === '7998' ? 'Docker/生产模式' : '自定义模式'));
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

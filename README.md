@@ -3,10 +3,16 @@
 <!-- CI Badge (update repository path appropriately) -->
 ![Build & Push](https://github.com/DrSmoothl/HMML2/actions/workflows/docker-build.yml/badge.svg)
 
+## 📚 快速开始
+
+**首次使用？** 查看 [快速开始指南 (QUICKSTART.md)](QUICKSTART.md) - 30秒完成部署！
+
+**Docker 部署？** 查看 [Docker 完整指南 (DOCKER_GUIDE.md)](DOCKER_GUIDE.md)
+
 ## 运行模式
 支持两种使用方式：
 1. 直接本地源码运行（Python 后端 + Vite 前端）
-2. Docker / Docker Compose 部署（前后端分离容器）
+2. Docker / Docker Compose 部署（**推荐** - 前后端统一容器）
 
 ### 本地源码方式
 后端：
@@ -31,42 +37,49 @@ pnpm dev
 VITE_API_BASE_URL=http://localhost:7999/api
 ```
 
-### Docker Compose 方式
+### Docker Compose 方式（统一镜像）
 ```
 docker compose up -d --build
 ```
-- 后端: http://localhost:7999
-- 前端: http://localhost:7998
+- 后端 API: http://localhost:7999
+- 前端界面: http://localhost:7998
 
-Compose 中前端构建时自动注入 `API_BASE=http://hmml-backend:7999/api`
-容器内互访使用服务名 `hmml-backend`。
+**新架构说明：**
+- 前后端打包在同一个镜像中，简化部署
+- 前端自动检测访问地址，支持跨主机访问
+- 无需手动配置 API 地址，自动适配
 
 ### 单行快速启动（Linux 用户）
-```
-USER=motricseven7 NET=hmml-net; docker network inspect "$NET" >/dev/null 2>&1 || docker network create "$NET"; docker rm -f hmml-backend hmml-frontend >/dev/null 2>&1 || true; docker pull "$USER/hmml-backend:latest" && docker pull "$USER/hmml-frontend:latest" && docker run -d --name hmml-backend --network "$NET" -p 7999:7999 "$USER/hmml-backend:latest" && docker run -d --name hmml-frontend --network "$NET" -p 7998:7998 "$USER/hmml-frontend:latest"
+```bash
+USER=motricseven7; docker rm -f hmml-unified >/dev/null 2>&1 || true; docker pull "$USER/hmml:latest" && docker run -d --name hmml-unified -p 7999:7999 -p 7998:7998 -v hmml-data:/app/backend/data -v hmml-logs:/app/backend/logs "$USER/hmml:latest"
 ```
 
 ### API 基址解析逻辑（前端 `api.ts`）
 优先级：
-1. `window.__HMML_API_BASE__` （运行时注入）
+1. `window.__HMML_API_BASE__` （运行时注入，**推荐用于 Docker 部署**）
 2. `VITE_API_BASE_URL` （构建时环境变量/`.env`）
-3. Docker 容器内：`http://hmml-backend:7999/api`
-4. 回退：`http://localhost:7999/api`
+3. 回退：`http://localhost:7999/api`
 
-### 运行时覆盖方式
-在 `index.html` `<head>` 中添加：
+**Docker 部署自动配置：**
+前端 `index.html` 中包含自动配置脚本，会根据访问地址动态设置 API 基址。
+例如：
+- 访问 `http://192.168.1.100:7998` → API 地址自动为 `http://192.168.1.100:7999/api`
+- 访问 `http://example.com:7998` → API 地址自动为 `http://example.com:7999/api`
+
+### 手动覆盖 API 地址
+如需手动指定 API 地址，在 `index.html` `<head>` 中的自动配置脚本之前添加：
+```html
+<script>window.__HMML_API_BASE__='https://your-api-server.com/api'</script>
 ```
-<script>window.__HMML_API_BASE__='https://example.com/api'</script>
-```
-无需重新构建可切换后端地址。
 
 ### 常见问题
 | 现象 | 可能原因 | 处理 |
 |------|----------|------|
-| NETWORK_ERROR | 前端容器访问 localhost | 使用服务名 hmml-backend 或注入变量 |
+| 跨主机访问 API 404 | API 地址被解析为 localhost | 检查浏览器控制台日志，确认 API Base URL 是否正确设置 |
 | 404 /api/* | 后端未启动 / URL prefix | 确认后端日志与 prefix 配置 |
 | CORS 报错 | 未开启 CORS | server.json 中 security.cors_enabled=true |
 | WebSocket 失败 | 端口或协议不匹配 | 确认 ws 基址与 Nginx/反代配置 |
+| 容器启动失败 | 端口被占用 | 检查 7998/7999 端口是否被占用 |
 
 ---
 

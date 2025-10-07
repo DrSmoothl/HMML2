@@ -1,42 +1,36 @@
 # Compose v2 不再需要 version 字段，移除以避免警告
+# HMML2 统一容器部署配置 - 前后端在同一个容器中
 services:
-  backend:
+  hmml:
     build:
       context: .
-      dockerfile: backend/Dockerfile
-    container_name: hmml-backend
+      dockerfile: Dockerfile
+    container_name: hmml-unified
     ports:
-      - "7999:7999"
+      - "7999:7999"  # 后端 API 端口
+      - "7998:7998"  # 前端 Web 端口
     environment:
-      # 可根据需要添加 ENV 变量
       PYTHONUNBUFFERED: "1"
-    restart: unless-stopped
-    networks:
-      - hmml-net
-    volumes:
-      - backend-data:/app/data
-      - backend-logs:/app/logs
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        API_BASE: http://hmml-backend:7999/api
-    container_name: hmml-frontend
-    depends_on:
-      - backend
-    ports:
-      - "7998:7998"
-    environment:
-      # 前端可通过构建时变量注入 API 基础地址，如使用 ARG + ENV
-      # 当前运行阶段仅提供静态文件
       TZ: Asia/Shanghai
     restart: unless-stopped
     networks:
       - hmml-net
+    volumes:
+      - hmml-data:/app/backend/data
+      - hmml-logs:/app/backend/logs
+      - hmml-config:/app/backend/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7999/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
 networks:
   hmml-net:
     driver: bridge
+
 volumes:
-  backend-data:
-  backend-logs:
+  hmml-data:
+  hmml-logs:
+  hmml-config:

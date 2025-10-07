@@ -1,34 +1,65 @@
-# Global ignores
+# Git 相关
 .git
 .gitignore
-**/__pycache__
-**/*.pyc
-*.pyo
-*.pyd
-*.py[cod]
-*.so
-.env
-.env.*
-.venv
-venv
-ENV
-build/
-.dist/
-coverage/
-node_modules
+.gitattributes
+.github
+
+# Node.js
 frontend/node_modules
-backend/.mypy_cache
+frontend/.pnpm-store
+frontend/dist
+frontend/coverage
+
+# Python
+backend/__pycache__
+backend/**/__pycache__
 backend/.pytest_cache
+backend/**/.pytest_cache
+backend/*.pyc
+backend/**/*.pyc
+backend/.venv
+backend/venv
+backend/.mypy_cache
+
+# 日志和临时文件
 backend/logs
+frontend/logs
+**/*.log
+
+# 数据文件（应该用 volume 挂载）
 backend/data/*.db
 backend/data/cache
-backend/dev
-backend/old
-**/*.log
-# Ignore frontend dist except when copied by Docker build context
-frontend/dist
-# OS / editor
+backend/config/token.token
+
+# IDE 和编辑器
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
 Thumbs.db
-.idea
-.vscode
+
+# 测试
+frontend/coverage
+backend/htmlcov
+backend/.coverage
+
+# 开发环境
+.env
+.env.*
+frontend/.env.local
+frontend/.env.development
+backend/.env.local
+backend/.env.development
+
+# 旧版本和开发工具
+backend/old
+backend/dev
+frontend/reset_setup.js
+
+# 文档（保留重要的）
+!README.md
+!DOCKER_GUIDE.md

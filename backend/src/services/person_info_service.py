@@ -69,10 +69,10 @@ class PersonInfoService:
             items = []
             for row in result.items:
                 # 处理可能为 None 的字段
-                for field in ['impression', 'short_impression', 'points', 'forgotten_points', 
-                             'info_list', 'name_reason']:
-                    if row.get(field) is None:
-                        row[field] = "" if field not in ['forgotten_points', 'info_list'] else "[]"
+                if row.get('name_reason') is None:
+                    row['name_reason'] = ""
+                if row.get('memory_points') is None:
+                    row['memory_points'] = None
                 
                 items.append(PersonInfo(**row))
             
@@ -115,26 +115,10 @@ class PersonInfoService:
                 'platform': person_info.platform,
                 'user_id': person_info.user_id,
                 'nickname': person_info.nickname,
-                'impression': person_info.impression,
-                'short_impression': person_info.short_impression,
-                'points': person_info.points,
-                'forgotten_points': person_info.forgotten_points or "[]",
-                'info_list': person_info.info_list or "[]",
                 'know_times': person_info.know_times,
                 'know_since': person_info.know_since,
                 'last_know': person_info.last_know,
-                'attitude_to_me': person_info.attitude_to_me,
-                'attitude_to_me_confidence': person_info.attitude_to_me_confidence,
-                'friendly_value': person_info.friendly_value,
-                'friendly_value_confidence': person_info.friendly_value_confidence,
-                'rudeness': person_info.rudeness,
-                'rudeness_confidence': person_info.rudeness_confidence,
-                'neuroticism': person_info.neuroticism,
-                'neuroticism_confidence': person_info.neuroticism_confidence,
-                'conscientiousness': person_info.conscientiousness,
-                'conscientiousness_confidence': person_info.conscientiousness_confidence,
-                'likeness': person_info.likeness,
-                'likeness_confidence': person_info.likeness_confidence
+                'memory_points': person_info.memory_points
             }
             
             # 执行插入
@@ -176,26 +160,10 @@ class PersonInfoService:
                 'platform': person_info.platform,
                 'user_id': person_info.user_id,
                 'nickname': person_info.nickname,
-                'impression': person_info.impression,
-                'short_impression': person_info.short_impression,
-                'points': person_info.points,
-                'forgotten_points': person_info.forgotten_points or "[]",
-                'info_list': person_info.info_list or "[]",
                 'know_times': person_info.know_times,
                 'know_since': person_info.know_since,
                 'last_know': person_info.last_know,
-                'attitude_to_me': person_info.attitude_to_me,
-                'attitude_to_me_confidence': person_info.attitude_to_me_confidence,
-                'friendly_value': person_info.friendly_value,
-                'friendly_value_confidence': person_info.friendly_value_confidence,
-                'rudeness': person_info.rudeness,
-                'rudeness_confidence': person_info.rudeness_confidence,
-                'neuroticism': person_info.neuroticism,
-                'neuroticism_confidence': person_info.neuroticism_confidence,
-                'conscientiousness': person_info.conscientiousness,
-                'conscientiousness_confidence': person_info.conscientiousness_confidence,
-                'likeness': person_info.likeness,
-                'likeness_confidence': person_info.likeness_confidence
+                'memory_points': person_info.memory_points
             }
             
             # WHERE条件
@@ -274,10 +242,10 @@ class PersonInfoService:
             
             if result:
                 # 处理可能为 None 的字段
-                for field in ['impression', 'short_impression', 'points', 'forgotten_points', 
-                             'info_list', 'name_reason']:
-                    if result.get(field) is None:
-                        result[field] = "" if field not in ['forgotten_points', 'info_list'] else "[]"
+                if result.get('name_reason') is None:
+                    result['name_reason'] = ""
+                if result.get('memory_points') is None:
+                    result['memory_points'] = None
                 
                 logger.info(f"查询人物信息成功，ID: {person_info_id}")
                 return PersonInfo(**result)

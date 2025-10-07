@@ -378,109 +378,9 @@ async def get_person_info_stats():
         avg_know_times_result = operator.execute_raw_sql("SELECT AVG(CAST(know_times AS FLOAT)) as avg_know_times FROM person_info WHERE know_times IS NOT NULL")
         avg_know_times = float(avg_know_times_result.fetchone()['avg_know_times'] or 0)
         
-        # 计算平均友好度
-        avg_friendly_result = operator.execute_raw_sql("SELECT AVG(CAST(friendly_value AS FLOAT)) as avg_friendly FROM person_info WHERE friendly_value IS NOT NULL")
-        avg_friendly_value = float(avg_friendly_result.fetchone()['avg_friendly'] or 0)
-        
         # 总认知次数
         total_know_times_result = operator.execute_raw_sql("SELECT SUM(CAST(know_times AS FLOAT)) as total_know_times FROM person_info WHERE know_times IS NOT NULL")
         total_know_times = float(total_know_times_result.fetchone()['total_know_times'] or 0)
-        
-        # 按友好度分组统计
-        friendly_stats_result = operator.execute_raw_sql("""
-            SELECT 
-                CASE 
-                    WHEN friendly_value IS NULL THEN 'unknown'
-                    WHEN CAST(friendly_value AS INTEGER) <= 2 THEN 'low'
-                    WHEN CAST(friendly_value AS INTEGER) <= 5 THEN 'medium'
-                    WHEN CAST(friendly_value AS INTEGER) <= 8 THEN 'high'
-                    ELSE 'very_high'
-                END as level,
-                COUNT(*) as count
-            FROM person_info 
-            GROUP BY level
-        """)
-        by_friendly_value = {row['level']: row['count'] for row in friendly_stats_result.fetchall()}
-        
-        # 按态度分组统计  
-        attitude_stats_result = operator.execute_raw_sql("""
-            SELECT 
-                CASE 
-                    WHEN attitude_to_me IS NULL THEN 'unknown'
-                    WHEN CAST(attitude_to_me AS INTEGER) <= 2 THEN 'negative'
-                    WHEN CAST(attitude_to_me AS INTEGER) <= 5 THEN 'neutral'
-                    WHEN CAST(attitude_to_me AS INTEGER) <= 8 THEN 'positive'
-                    ELSE 'very_positive'
-                END as level,
-                COUNT(*) as count
-            FROM person_info 
-            GROUP BY level
-        """)
-        by_attitude_to_me = {row['level']: row['count'] for row in attitude_stats_result.fetchall()}
-        
-        # 按粗鲁度分组统计
-        rudeness_stats_result = operator.execute_raw_sql("""
-            SELECT 
-                CASE 
-                    WHEN rudeness IS NULL THEN 'unknown'
-                    WHEN CAST(rudeness AS INTEGER) <= 2 THEN 'low'
-                    WHEN CAST(rudeness AS INTEGER) <= 5 THEN 'medium'
-                    WHEN CAST(rudeness AS INTEGER) <= 8 THEN 'high'
-                    ELSE 'very_high'
-                END as level,
-                COUNT(*) as count
-            FROM person_info 
-            GROUP BY level
-        """)
-        by_rudeness = {row['level']: row['count'] for row in rudeness_stats_result.fetchall()}
-        
-        # 按神经质程度分组统计
-        neuroticism_stats_result = operator.execute_raw_sql("""
-            SELECT 
-                CASE 
-                    WHEN neuroticism IS NULL THEN 'unknown'
-                    WHEN CAST(neuroticism AS INTEGER) <= 2 THEN 'low'
-                    WHEN CAST(neuroticism AS INTEGER) <= 5 THEN 'medium'
-                    WHEN CAST(neuroticism AS INTEGER) <= 8 THEN 'high'
-                    ELSE 'very_high'
-                END as level,
-                COUNT(*) as count
-            FROM person_info 
-            GROUP BY level
-        """)
-        by_neuroticism = {row['level']: row['count'] for row in neuroticism_stats_result.fetchall()}
-        
-        # 按尽责程度分组统计
-        conscientiousness_stats_result = operator.execute_raw_sql("""
-            SELECT 
-                CASE 
-                    WHEN conscientiousness IS NULL THEN 'unknown'
-                    WHEN CAST(conscientiousness AS INTEGER) <= 2 THEN 'low'
-                    WHEN CAST(conscientiousness AS INTEGER) <= 5 THEN 'medium'
-                    WHEN CAST(conscientiousness AS INTEGER) <= 8 THEN 'high'
-                    ELSE 'very_high'
-                END as level,
-                COUNT(*) as count
-            FROM person_info 
-            GROUP BY level
-        """)
-        by_conscientiousness = {row['level']: row['count'] for row in conscientiousness_stats_result.fetchall()}
-        
-        # 按喜爱程度分组统计
-        likeness_stats_result = operator.execute_raw_sql("""
-            SELECT 
-                CASE 
-                    WHEN likeness IS NULL THEN 'unknown'
-                    WHEN CAST(likeness AS INTEGER) <= 2 THEN 'low'
-                    WHEN CAST(likeness AS INTEGER) <= 5 THEN 'medium'
-                    WHEN CAST(likeness AS INTEGER) <= 8 THEN 'high'
-                    ELSE 'very_high'
-                END as level,
-                COUNT(*) as count
-            FROM person_info 
-            GROUP BY level
-        """)
-        by_likeness = {row['level']: row['count'] for row in likeness_stats_result.fetchall()}
         
         # 最近活跃用户（7天内有互动的）
         recent_active_result = operator.execute_raw_sql("""
@@ -511,14 +411,7 @@ async def get_person_info_stats():
         stats_data = {
             "total": total,
             "byPlatform": by_platform,
-            "byFriendlyValue": by_friendly_value,
-            "byAttitudeToMe": by_attitude_to_me,
-            "byRudeness": by_rudeness,
-            "byNeuroticism": by_neuroticism,
-            "byConscientiousness": by_conscientiousness,
-            "byLikeness": by_likeness,
             "avgKnowTimes": avg_know_times,
-            "avgFriendlyValue": avg_friendly_value,
             "totalKnowTimes": total_know_times,
             "recentActive": recent_active,
             "topPersons": top_persons

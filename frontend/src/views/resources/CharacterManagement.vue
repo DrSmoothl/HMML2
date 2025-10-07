@@ -46,18 +46,6 @@
             </select>
           </div>
 
-          <!-- 态度筛选 -->
-          <div class="form-control">
-            <select v-model="filters.attitudeRange" class="select select-bordered" @change="loadPersonInfos">
-              <option value="">所有态度</option>
-              <option value="very_positive">非常喜欢 (8-10)</option>
-              <option value="positive">喜欢 (4-8)</option>
-              <option value="neutral">中立 (0)</option>
-              <option value="negative">讨厌 (-8-0)</option>
-              <option value="very_negative">非常讨厌 (-10--8)</option>
-            </select>
-          </div>
-
           <!-- 清除筛选 -->
           <button class="btn btn-ghost btn-sm" @click="clearFilters">
             清除筛选
@@ -91,21 +79,12 @@
       <div class="stat bg-base-100 shadow rounded-box">
         <div class="stat-figure text-accent">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-        </div>
-        <div class="stat-title">平均好感度</div>
-        <div class="stat-value text-accent">{{ stats.avgFriendlyValue.toFixed(1) }}</div>
-      </div>
-
-      <div class="stat bg-base-100 shadow rounded-box">
-        <div class="stat-figure text-warning">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
-        <div class="stat-title">近期活跃</div>
-        <div class="stat-value text-warning">{{ stats.recentActive }}</div>
+        <div class="stat-title">最近活跃</div>
+        <div class="stat-value text-accent">{{ stats.recentActive }}</div>
+        <div class="stat-desc">7天内有互动</div>
       </div>
     </div>
 
@@ -145,22 +124,6 @@
                   </div>
                 </th>
                 <th>平台</th>
-                <th class="cursor-pointer hover:bg-base-200" @click="handleSort('attitude_to_me')">
-                  <div class="flex items-center gap-1">
-                    对我态度
-                    <svg v-if="sortBy === 'attitude_to_me'" class="w-4 h-4" :class="sortDir === 'ASC' ? '' : 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                    </svg>
-                  </div>
-                </th>
-                <th class="cursor-pointer hover:bg-base-200" @click="handleSort('neuroticism')">
-                  <div class="flex items-center gap-1">
-                    神经质
-                    <svg v-if="sortBy === 'neuroticism'" class="w-4 h-4" :class="sortDir === 'ASC' ? '' : 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                    </svg>
-                  </div>
-                </th>
                 <th class="cursor-pointer hover:bg-base-200" @click="handleSort('know_times')">
                   <div class="flex items-center gap-1">
                     认知次数
@@ -193,20 +156,6 @@
                 <td>
                   <div class="badge badge-outline badge-sm">
                     {{ getPlatformName(person.platform) }}
-                  </div>
-                </td>
-                <td>
-                  <div class="flex items-center gap-2">
-                    <div class="badge" :class="getAttitudeToMeColor(person.attitude_to_me)">
-                      {{ getAttitudeToMeLabel(person.attitude_to_me) }}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="flex items-center gap-2">
-                    <div class="badge" :class="getNeuroticismColor(person.neuroticism)">
-                      {{ getNeuroticismLabel(person.neuroticism) }}
-                    </div>
                   </div>
                 </td>
                 <td>
@@ -371,54 +320,21 @@
                 class="input input-bordered w-full"
               />
             </div>
-
-            <div class="space-y-2">
-              <div class="block">
-                <span class="text-sm font-medium text-base-content">对我态度 (-10 到 10)</span>
-              </div>
-              <input
-                v-model.number="formData.attitude_to_me_value"
-                type="number"
-                min="-10"
-                max="10"
-                step="1"
-                placeholder="0"
-                class="input input-bordered w-full"
-              />
-              <div class="text-xs text-base-content/60">
-                -10表示非常讨厌，0表示中立，10表示非常喜欢
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <div class="block">
-                <span class="text-sm font-medium text-base-content">神经质程度 (0 到 10)</span>
-              </div>
-              <input
-                v-model.number="formData.neuroticism_value"
-                type="number"
-                min="0"
-                max="10"
-                step="1"
-                placeholder="0"
-                class="input input-bordered w-full"
-              />
-              <div class="text-xs text-base-content/60">
-                0表示完全不神经质，10表示非常神经质
-              </div>
-            </div>
           </div>
 
-          <!-- 基本信息 -->
+          <!-- 记忆点信息 -->
           <div class="space-y-2">
             <div class="block">
-              <span class="text-sm font-medium text-base-content">认知要点</span>
+              <span class="text-sm font-medium text-base-content">记忆点 (JSON格式)</span>
             </div>
             <textarea
-              v-model="formData.points"
-              class="textarea textarea-bordered h-24 resize-none w-full"
-              placeholder="对这个人的了解和认知..."
+              v-model="formData.memory_points"
+              class="textarea textarea-bordered h-32 resize-none w-full font-mono text-sm"
+              placeholder='例如: ["喜欢打游戏","性格开朗","经常加班"]'
             ></textarea>
+            <div class="text-xs text-base-content/60">
+              请输入JSON数组格式的记忆点列表
+            </div>
           </div>
 
           <div class="space-y-2">
@@ -487,22 +403,6 @@
                   </div>
                 </div>
                 <div class="space-y-1">
-                  <span class="font-medium text-base-content/70">对我态度</span>
-                  <div class="flex items-center gap-2">
-                    <div class="badge" :class="getAttitudeToMeColor(viewingPerson.attitude_to_me)">
-                      {{ getAttitudeToMeLabel(viewingPerson.attitude_to_me) }}
-                    </div>
-                  </div>
-                </div>
-                <div class="space-y-1">
-                  <span class="font-medium text-base-content/70">神经质程度</span>
-                  <div class="flex items-center gap-2">
-                    <div class="badge" :class="getNeuroticismColor(viewingPerson.neuroticism)">
-                      {{ getNeuroticismLabel(viewingPerson.neuroticism) }}
-                    </div>
-                  </div>
-                </div>
-                <div class="space-y-1">
                   <span class="font-medium text-base-content/70">认识时间</span>
                   <div class="text-xs">{{ formatTimestamp(viewingPerson.know_since) }}</div>
                 </div>
@@ -514,13 +414,13 @@
             </div>
           </div>
 
-          <!-- 认知信息 -->
-          <div class="card bg-base-200/50" v-if="viewingPerson.points">
+          <!-- 记忆点信息 -->
+          <div class="card bg-base-200/50" v-if="viewingPerson.memory_points">
             <div class="card-body p-4">
-              <h4 class="card-title text-base mb-3">认知要点</h4>
+              <h4 class="card-title text-base mb-3">记忆点</h4>
               <div class="text-sm">
-                <div class="bg-base-100 px-3 py-2 rounded text-base-content leading-relaxed">
-                  {{ viewingPerson.points }}
+                <div class="bg-base-100 px-3 py-2 rounded text-base-content leading-relaxed font-mono">
+                  {{ viewingPerson.memory_points }}
                 </div>
               </div>
             </div>
@@ -616,8 +516,7 @@ const pagination = reactive({
 const sortBy = ref('person_name')
 const sortDir = ref<'ASC' | 'DESC'>('ASC')
 const filters = reactive({
-  platform: '',
-  attitudeRange: ''
+  platform: ''
 })
 
 // 编辑相关
@@ -630,16 +529,14 @@ const showEditModal = ref<boolean>(false)
 const showViewModal = ref<boolean>(false)
 const showDeleteModal = ref<boolean>(false)
 
-const formData = reactive<CreatePersonInfoRequest & { attitude_to_me_value?: number; neuroticism_value?: number }>({
+const formData = reactive<CreatePersonInfoRequest>({
   person_id: '',
   person_name: '',
   platform: '',
   user_id: '',
   nickname: '',
   name_reason: '',
-  points: '',
-  attitude_to_me_value: 0,
-  neuroticism_value: 0
+  memory_points: ''
 })
 
 // 工具函数
@@ -653,48 +550,6 @@ const getPlatformName = (platform: string): string => {
     'other': '其他'
   }
   return platformNames[platform] || platform
-}
-
-const getAttitudeToMeColor = (attitude: string | undefined): string => {
-  if (!attitude) return 'badge-neutral'
-  const value = parseInt(attitude)
-  if (value >= 8) return 'badge-success'
-  if (value >= 4) return 'badge-info'
-  if (value === 0) return 'badge-neutral'
-  if (value >= -8) return 'badge-warning'
-  return 'badge-error'
-}
-
-const getAttitudeToMeLabel = (attitude: string | undefined): string => {
-  if (!attitude) return '未知'
-  const value = parseInt(attitude)
-  if (value >= 8) return '非常喜欢'
-  if (value >= 4) return '喜欢'
-  if (value > 0) return '较好'
-  if (value === 0) return '中立'
-  if (value > -4) return '较差'
-  if (value >= -8) return '讨厌'
-  return '非常讨厌'
-}
-
-const getNeuroticismColor = (neuroticism: string | undefined): string => {
-  if (!neuroticism) return 'badge-neutral'
-  const value = parseInt(neuroticism)
-  if (value >= 8) return 'badge-error'
-  if (value >= 6) return 'badge-warning'
-  if (value >= 4) return 'badge-info'
-  if (value >= 2) return 'badge-success'
-  return 'badge-neutral'
-}
-
-const getNeuroticismLabel = (neuroticism: string | undefined): string => {
-  if (!neuroticism) return '未知'
-  const value = parseInt(neuroticism)
-  if (value >= 8) return '非常神经质'
-  if (value >= 6) return '较神经质'
-  if (value >= 4) return '一般'
-  if (value >= 2) return '较稳定'
-  return '非常稳定'
 }
 
 const formatTimestamp = (timestamp: number): string => {
@@ -784,26 +639,6 @@ const loadPersonInfos = async (): Promise<void> => {
       params.platform = filters.platform
     }
     
-    if (filters.attitudeRange) {
-      switch (filters.attitudeRange) {
-        case 'very_positive':
-          params.attitude_to_me = '8,9,10'
-          break
-        case 'positive':
-          params.attitude_to_me = '4,5,6,7'
-          break
-        case 'neutral':
-          params.attitude_to_me = '0'
-          break
-        case 'negative':
-          params.attitude_to_me = '-1,-2,-3,-4,-5,-6,-7'
-          break
-        case 'very_negative':
-          params.attitude_to_me = '-8,-9,-10'
-          break
-      }
-    }
-    
     const response = await personInfoApi.getPersonInfos(params)
     if (response.status === 200 && response.data) {
       personInfos.value = response.data.items
@@ -874,7 +709,6 @@ const handleSearch = async (): Promise<void> => {
 const clearFilters = (): void => {
   searchKeyword.value = ''
   filters.platform = ''
-  filters.attitudeRange = ''
   pagination.currentPage = 1
   loadPersonInfos()
 }
@@ -946,9 +780,7 @@ const resetFormData = (): void => {
   formData.user_id = ''
   formData.nickname = ''
   formData.name_reason = ''
-  formData.points = ''
-  formData.attitude_to_me_value = 0
-  formData.neuroticism_value = 0
+  formData.memory_points = ''
 }
 
 const fillFormData = (person: PersonInfo): void => {
@@ -958,9 +790,7 @@ const fillFormData = (person: PersonInfo): void => {
   formData.user_id = person.user_id
   formData.nickname = person.nickname || ''
   formData.name_reason = person.name_reason || ''
-  formData.points = person.points || ''
-  formData.attitude_to_me_value = person.attitude_to_me ? parseInt(person.attitude_to_me) : 0
-  formData.neuroticism_value = person.neuroticism ? parseInt(person.neuroticism) : 0
+  formData.memory_points = person.memory_points || ''
 }
 
 // CRUD 操作
@@ -973,21 +803,15 @@ const savePersonInfo = async (): Promise<void> => {
         person_name: formData.person_name,
         nickname: formData.nickname,
         name_reason: formData.name_reason,
-        points: formData.points,
-        attitude_to_me: formData.attitude_to_me_value?.toString(),
-        neuroticism: formData.neuroticism_value?.toString()
+        memory_points: formData.memory_points
       }
       
       await personInfoApi.updatePersonInfo(editingPerson.value.id, updateData)
     } else {
       // 创建
       const createData: CreatePersonInfoRequest = {
-        ...formData,
-        attitude_to_me: formData.attitude_to_me_value?.toString(),
-        neuroticism: formData.neuroticism_value?.toString()
+        ...formData
       }
-      delete (createData as any).attitude_to_me_value
-      delete (createData as any).neuroticism_value
       
       await personInfoApi.createPersonInfo(createData)
     }
