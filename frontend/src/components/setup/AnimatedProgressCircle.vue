@@ -62,7 +62,7 @@ function drawCircle() {
   ctx.lineWidth = 40
   ctx.stroke()
 
-  // 绘制4个扇形进度
+  // 绘制4个扇形进度 111
   const anglePerSector = (Math.PI * 2) / 4
   const currentProgress = [
     progressState.sector0,
