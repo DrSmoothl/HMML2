@@ -60,7 +60,8 @@ const submit = async () => {
   try {
     const res = await api.post('/system/verifyToken', { token: token.value })
     if (res.data?.data?.valid) {
-      localStorage.setItem('access_token_valid', '1')
+      // 使用 sessionStorage 保存验证状态，每次启动应用时都需要重新验证
+      sessionStorage.setItem('access_token_valid', '1')
       emit('validated')
     } else {
       error.value = '验证失败'

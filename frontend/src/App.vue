@@ -157,7 +157,8 @@ const appStore = useAppStore()
 const isSidebarOpen = ref(false)
 const showSetup = ref(false)
 const isOneKeyEnv = ref(false)
-const tokenValidated = ref(localStorage.getItem('access_token_valid') === '1')
+// 使用 sessionStorage 而不是 localStorage
+const tokenValidated = ref(sessionStorage.getItem('access_token_valid') === '1')
 
 // 计算属性
 const isLoading = computed(() => appStore.isLoading)

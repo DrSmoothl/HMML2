@@ -217,7 +217,9 @@ const regenerateToken = async () => {
       newToken.value = token
       showTokenModal.value = true
       successMsg.value = '再生成功，请及时复制新 Token'
-      // 既然旧 token 失效，应清除本地验证，下次刷新会重新要求输入
+      // 既然旧 token 失效，应清除验证状态，下次刷新会重新要求输入
+      sessionStorage.removeItem('access_token_valid')
+      // 同时清除可能存在的旧版 localStorage
       localStorage.removeItem('access_token_valid')
     } else {
       throw new Error('未返回新 Token')
